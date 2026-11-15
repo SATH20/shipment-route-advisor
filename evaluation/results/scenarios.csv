@@ -1,0 +1,5 @@
+Scenario,Re-routed,Forced,Locked in (no alternative),Moves,Saved on voluntary switches ($),Avg cost before -> after ($),CO2 change (t)
+Red Sea crisis,3/30,3,6,Suez corridor -> Sea + rail (1); Suez corridor -> Air freight (1); Suez corridor -> Sea + air (1),0,"4,597 -> 4,837",9.4
+Red Sea reopens,2/30,0,4,Direct sea -> Suez corridor (1); Air freight -> Suez corridor (1),18144,"4,597 -> 3,948",-20.8
+Hub congestion spike,3/30,2,5,Suez corridor -> Sea + rail (1); Sea + rail -> Sea + air (1); Suez corridor -> Sea + air (1),213,"4,597 -> 5,061",13.4
+Air capacity crunch,0/30,0,5,-,0,"4,597 -> 6,102",0.0

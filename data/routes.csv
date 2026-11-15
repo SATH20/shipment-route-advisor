@@ -1,0 +1,121 @@
+route_id,shipment_id,route_name,n_legs
+S001-R1,S001,Air freight,1
+S001-R2,S001,Sea + rail,2
+S001-R3,S001,Suez corridor,2
+S001-R4,S001,Direct sea,1
+S002-R1,S002,Sea via hub,2
+S002-R2,S002,Direct sea,1
+S002-R3,S002,Air freight,1
+S002-R4,S002,Sea + rail,2
+S003-R1,S003,Air freight,1
+S003-R2,S003,Direct sea,1
+S003-R3,S003,Sea + rail,2
+S003-R4,S003,Sea + air,2
+S004-R1,S004,Direct sea,1
+S004-R2,S004,Sea via hub,2
+S004-R3,S004,Sea + air,2
+S004-R4,S004,Air freight,1
+S005-R1,S005,Air freight,1
+S005-R2,S005,Direct sea,1
+S005-R3,S005,Suez corridor,2
+S005-R4,S005,Sea via hub,2
+S006-R1,S006,Direct sea,1
+S006-R2,S006,Suez corridor,2
+S006-R3,S006,Sea + rail,2
+S006-R4,S006,Air freight,1
+S007-R1,S007,Sea + air,2
+S007-R2,S007,Air freight,1
+S007-R3,S007,Direct sea,1
+S007-R4,S007,Sea via hub,2
+S008-R1,S008,Air freight,1
+S008-R2,S008,Suez corridor,2
+S008-R3,S008,Direct sea,1
+S008-R4,S008,Sea + air,2
+S009-R1,S009,Sea + rail,2
+S009-R2,S009,Sea + air,2
+S009-R3,S009,Direct sea,1
+S009-R4,S009,Air freight,1
+S010-R1,S010,Sea + air,2
+S010-R2,S010,Sea via hub,2
+S010-R3,S010,Direct sea,1
+S010-R4,S010,Air freight,1
+S011-R1,S011,Sea + air,2
+S011-R2,S011,Direct sea,1
+S011-R3,S011,Suez corridor,2
+S011-R4,S011,Air freight,1
+S012-R1,S012,Suez corridor,2
+S012-R2,S012,Air freight,1
+S012-R3,S012,Sea + rail,2
+S012-R4,S012,Direct sea,1
+S013-R1,S013,Sea via hub,2
+S013-R2,S013,Air freight,1
+S013-R3,S013,Direct sea,1
+S013-R4,S013,Suez corridor,2
+S014-R1,S014,Sea + rail,2
+S014-R2,S014,Direct sea,1
+S014-R3,S014,Sea via hub,2
+S014-R4,S014,Air freight,1
+S015-R1,S015,Sea + air,2
+S015-R2,S015,Sea via hub,2
+S015-R3,S015,Direct sea,1
+S015-R4,S015,Air freight,1
+S016-R1,S016,Sea + air,2
+S016-R2,S016,Direct sea,1
+S016-R3,S016,Air freight,1
+S016-R4,S016,Sea + rail,2
+S017-R1,S017,Air freight,1
+S017-R2,S017,Suez corridor,2
+S017-R3,S017,Sea via hub,2
+S017-R4,S017,Direct sea,1
+S018-R1,S018,Air freight,1
+S018-R2,S018,Sea + air,2
+S018-R3,S018,Direct sea,1
+S018-R4,S018,Sea via hub,2
+S019-R1,S019,Suez corridor,2
+S019-R2,S019,Sea via hub,2
+S019-R3,S019,Direct sea,1
+S019-R4,S019,Air freight,1
+S020-R1,S020,Air freight,1
+S020-R2,S020,Sea + rail,2
+S020-R3,S020,Suez corridor,2
+S020-R4,S020,Direct sea,1
+S021-R1,S021,Sea + air,2
+S021-R2,S021,Direct sea,1
+S021-R3,S021,Sea + rail,2
+S021-R4,S021,Air freight,1
+S022-R1,S022,Sea + rail,2
+S022-R2,S022,Suez corridor,2
+S022-R3,S022,Direct sea,1
+S022-R4,S022,Air freight,1
+S023-R1,S023,Direct sea,1
+S023-R2,S023,Suez corridor,2
+S023-R3,S023,Sea via hub,2
+S023-R4,S023,Air freight,1
+S024-R1,S024,Air freight,1
+S024-R2,S024,Suez corridor,2
+S024-R3,S024,Direct sea,1
+S024-R4,S024,Sea + rail,2
+S025-R1,S025,Air freight,1
+S025-R2,S025,Suez corridor,2
+S025-R3,S025,Direct sea,1
+S025-R4,S025,Sea + air,2
+S026-R1,S026,Air freight,1
+S026-R2,S026,Direct sea,1
+S026-R3,S026,Sea + air,2
+S026-R4,S026,Sea + rail,2
+S027-R1,S027,Sea via hub,2
+S027-R2,S027,Direct sea,1
+S027-R3,S027,Air freight,1
+S027-R4,S027,Sea + rail,2
+S028-R1,S028,Air freight,1
+S028-R2,S028,Sea + rail,2
+S028-R3,S028,Direct sea,1
+S028-R4,S028,Sea + air,2
+S029-R1,S029,Sea via hub,2
+S029-R2,S029,Direct sea,1
+S029-R3,S029,Sea + air,2
+S029-R4,S029,Air freight,1
+S030-R1,S030,Direct sea,1
+S030-R2,S030,Sea via hub,2
+S030-R3,S030,Sea + air,2
+S030-R4,S030,Air freight,1

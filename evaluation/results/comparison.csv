@@ -1,0 +1,9 @@
+Strategy,Avg true cost ($),Avg regret vs oracle ($),Matches oracle,Avg on-time,Meets on-time target,Avg worst-10% cost ($),Total CO2 (t)
+Always cheapest,1987,1299,76%,96.6%,93%,8730,17.3
+Always fastest,7899,5714,30%,99.7%,100%,10541,218.5
+Always safest,7263,4055,43%,98.9%,100%,8768,203.7
+Fixed weights,6301,6093,47%,99.0%,100%,11111,161.4
+Advisor (profile rules),3199,315,91%,97.8%,100%,6421,67.3
+Advisor (expected cost only),3003,452,82%,97.7%,100%,6558,60.0
+Advisor (play-safe only),3716,831,67%,98.4%,100%,6007,88.0
+Oracle (perfect hindsight),3156,0,100%,98.0%,100%,6083,67.0

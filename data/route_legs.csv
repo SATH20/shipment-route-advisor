@@ -1,0 +1,181 @@
+route_id,leg_no,from_hub,to_hub,mode,region,distance_km,cost_usd,transit_days,delay_prob,mean_delay_days,congestion,geo_risk
+S001-R1,1,Mumbai,Hamburg,air,air,6947.0,4264.47,1.75,0.059,0.32,0.161,0.251
+S001-R2,1,Mumbai,Bandar Abbas,sea,open_ocean,2970.0,235.38,5.58,0.312,2.4,0.367,0.664
+S001-R2,2,Bandar Abbas,Hamburg,rail,rail_corridor,5066.0,496.06,7.58,0.294,2.16,0.45,0.577
+S001-R3,1,Mumbai,Port Said,sea,red_sea,5549.0,292.72,9.51,0.159,3.15,0.497,0.393
+S001-R3,2,Port Said,Hamburg,sea,mediterranean,6699.0,315.03,11.24,0.25,2.46,0.35,0.582
+S001-R4,1,Mumbai,Hamburg,sea,open_ocean,23387.0,748.14,36.61,0.28,1.92,0.429,0.297
+S002-R1,1,Mumbai,Salalah,sea,open_ocean,2239.0,281.12,4.34,0.271,4.19,0.517,0.154
+S002-R1,2,Salalah,Hamburg,sea,open_ocean,22353.0,1324.66,35.43,0.513,4.08,0.463,0.113
+S002-R2,1,Mumbai,Hamburg,sea,open_ocean,23201.0,1310.68,36.9,0.37,5.1,0.394,0.087
+S002-R3,1,Mumbai,Hamburg,air,air,7102.0,10653.22,1.81,0.095,0.59,0.319,0.166
+S002-R4,1,Mumbai,Bandar Abbas,sea,open_ocean,2955.0,305.58,5.52,0.217,3.84,0.445,0.404
+S002-R4,2,Bandar Abbas,Hamburg,rail,rail_corridor,4951.0,951.71,7.38,0.224,4.82,0.304,0.439
+S003-R1,1,Chennai,Los Angeles,air,air,15437.0,14076.99,2.64,0.112,1.5,0.286,0.107
+S003-R2,1,Chennai,Los Angeles,sea,open_ocean,17643.0,765.01,28.64,0.291,3.22,0.744,0.208
+S003-R3,1,Chennai,Seattle,sea,open_ocean,17519.0,784.43,27.56,0.155,2.05,0.59,0.496
+S003-R3,2,Seattle,Los Angeles,rail,rail_corridor,1603.0,317.69,3.15,0.307,2.89,0.857,0.593
+S003-R4,1,Chennai,Kaohsiung,sea,open_ocean,6176.0,349.3,10.77,0.167,2.49,0.797,0.162
+S003-R4,2,Kaohsiung,Los Angeles,air,air,11462.0,12253.32,2.23,0.237,0.58,0.394,0.076
+S004-R1,1,Mundra,Piraeus,sea,open_ocean,24233.0,522.85,38.47,0.302,5.95,0.522,0.146
+S004-R2,1,Mundra,Jebel Ali,sea,open_ocean,1643.0,174.53,3.63,0.35,2.59,0.841,0.222
+S004-R2,2,Jebel Ali,Piraeus,sea,open_ocean,24401.0,544.9,38.0,0.315,2.42,0.561,0.344
+S004-R3,1,Mundra,Jebel Ali,sea,open_ocean,1666.0,176.52,3.56,0.212,1.4,0.254,0.213
+S004-R3,2,Jebel Ali,Piraeus,air,air,3447.0,1386.3,1.35,0.256,1.2,0.727,0.171
+S004-R4,1,Mundra,Piraeus,air,air,4784.0,2131.84,1.51,0.055,0.42,0.136,0.119
+S005-R1,1,Mundra,Piraeus,air,air,4782.0,4099.64,1.5,0.075,1.81,0.169,0.305
+S005-R2,1,Mundra,Piraeus,sea,open_ocean,23838.0,830.67,37.28,0.181,2.98,0.299,0.103
+S005-R3,1,Mundra,Port Said,sea,red_sea,5912.0,313.85,10.06,0.277,4.68,0.56,0.621
+S005-R3,2,Port Said,Piraeus,sea,mediterranean,1160.0,177.67,2.85,0.249,2.78,0.397,0.905
+S005-R4,1,Mundra,Jebel Ali,sea,open_ocean,1690.0,191.78,3.6,0.156,2.56,1.0,0.125
+S005-R4,2,Jebel Ali,Piraeus,sea,open_ocean,25669.0,830.35,39.7,0.363,4.03,0.516,0.155
+S006-R1,1,Singapore,New York,sea,open_ocean,24335.0,1066.05,39.25,0.374,1.48,0.285,0.226
+S006-R2,1,Singapore,Port Said,sea,red_sea,9234.0,499.84,14.85,0.355,8.7,0.224,0.586
+S006-R2,2,Port Said,New York,sea,mediterranean,9511.0,573.69,15.76,0.411,3.31,0.343,0.475
+S006-R3,1,Singapore,Los Angeles,sea,open_ocean,15045.0,751.17,24.38,0.28,4.35,0.545,0.321
+S006-R3,2,Los Angeles,New York,rail,rail_corridor,4270.0,613.53,6.75,0.244,5.68,0.193,0.235
+S006-R4,1,Singapore,New York,air,air,15752.0,16831.61,2.78,0.043,1.44,0.261,0.048
+S007-R1,1,Shanghai,Singapore,sea,open_ocean,4221.0,464.7,7.58,0.167,0.59,0.19,0.269
+S007-R1,2,Singapore,Rotterdam,air,air,11456.0,21608.13,2.27,0.298,2.07,0.171,0.086
+S007-R2,1,Shanghai,Rotterdam,air,air,9313.0,18835.62,1.98,0.123,0.55,0.35,0.058
+S007-R3,1,Shanghai,Rotterdam,sea,open_ocean,27345.0,1941.27,43.16,0.224,3.11,0.355,0.38
+S007-R4,1,Shanghai,Singapore,sea,open_ocean,4275.0,436.22,7.64,0.146,8.06,0.733,0.151
+S007-R4,2,Singapore,Rotterdam,sea,open_ocean,23437.0,1923.02,37.4,0.269,3.49,0.588,0.284
+S008-R1,1,Shanghai,Rotterdam,air,air,9126.0,4773.76,2.07,0.06,0.82,0.378,0.148
+S008-R2,1,Shanghai,Port Said,sea,red_sea,13694.0,441.45,21.57,0.286,3.14,0.594,0.796
+S008-R2,2,Port Said,Rotterdam,sea,mediterranean,6589.0,285.73,11.18,0.619,3.35,0.285,1.0
+S008-R3,1,Shanghai,Rotterdam,sea,open_ocean,28274.0,725.33,45.23,0.223,3.07,0.352,0.22
+S008-R4,1,Shanghai,Colombo,sea,open_ocean,6857.0,294.07,11.6,0.214,1.94,0.301,0.295
+S008-R4,2,Colombo,Rotterdam,air,air,9034.0,4992.06,1.96,0.149,2.84,0.362,0.293
+S009-R1,1,Ho Chi Minh,Lianyungang,sea,open_ocean,3661.0,256.44,6.76,0.443,2.18,0.334,0.56
+S009-R1,2,Lianyungang,Felixstowe,rail,rail_corridor,9687.0,988.46,13.69,0.377,4.14,0.547,0.286
+S009-R2,1,Ho Chi Minh,Colombo,sea,open_ocean,4955.0,304.02,8.87,0.19,2.9,0.379,0.073
+S009-R2,2,Colombo,Felixstowe,air,air,8826.0,7685.59,1.97,0.123,1.19,0.425,0.234
+S009-R3,1,Ho Chi Minh,Felixstowe,sea,open_ocean,25940.0,920.56,39.88,0.155,3.07,0.309,0.131
+S009-R4,1,Ho Chi Minh,Felixstowe,air,air,10909.0,8420.5,2.17,0.056,0.67,0.121,0.114
+S010-R1,1,Shanghai,Singapore,sea,open_ocean,4239.0,255.26,7.34,0.218,2.01,0.418,0.274
+S010-R1,2,Singapore,Rotterdam,air,air,11229.0,7355.74,2.29,0.247,3.14,0.629,0.31
+S010-R2,1,Shanghai,Colombo,sea,open_ocean,7057.0,321.87,11.69,0.401,1.44,0.568,0.192
+S010-R2,2,Colombo,Rotterdam,sea,open_ocean,20972.0,648.42,32.4,0.377,1.36,0.854,0.372
+S010-R3,1,Shanghai,Rotterdam,sea,open_ocean,27018.0,726.27,41.99,0.174,2.13,0.32,0.134
+S010-R4,1,Shanghai,Rotterdam,air,air,9328.0,5698.08,2.05,0.04,0.75,0.194,0.275
+S011-R1,1,Mundra,Salalah,sea,open_ocean,2210.0,213.2,4.53,0.144,1.72,0.296,0.179
+S011-R1,2,Salalah,Piraeus,air,air,3967.0,2957.88,1.4,0.113,0.51,0.258,0.265
+S011-R2,1,Mundra,Piraeus,sea,open_ocean,23601.0,866.46,36.46,0.156,2.82,0.356,0.179
+S011-R3,1,Mundra,Port Said,sea,red_sea,5604.0,314.66,9.43,0.394,2.54,0.298,0.856
+S011-R3,2,Port Said,Piraeus,sea,mediterranean,1102.0,179.87,2.72,0.091,4.04,0.706,1.0
+S011-R4,1,Mundra,Piraeus,air,air,4988.0,4281.83,1.57,0.065,1.26,0.264,0.117
+S012-R1,1,Singapore,Port Said,sea,red_sea,9258.0,313.67,15.33,0.226,3.15,0.727,0.305
+S012-R1,2,Port Said,New York,sea,mediterranean,9814.0,329.67,15.93,0.237,5.28,0.241,0.731
+S012-R2,1,Singapore,New York,air,air,16591.0,9135.78,2.79,0.04,1.56,0.207,0.144
+S012-R3,1,Singapore,Los Angeles,sea,open_ocean,14630.0,441.92,23.67,0.467,2.59,0.273,0.43
+S012-R3,2,Los Angeles,New York,rail,rail_corridor,4063.0,401.6,6.29,0.24,3.26,0.498,0.413
+S012-R4,1,Singapore,New York,sea,open_ocean,25190.0,716.91,38.79,0.243,5.27,0.245,0.308
+S013-R1,1,Ho Chi Minh,Colombo,sea,open_ocean,4918.0,509.2,8.72,0.272,3.01,0.641,0.264
+S013-R1,2,Colombo,Felixstowe,sea,open_ocean,20759.0,1676.94,32.71,0.815,3.55,1.0,0.106
+S013-R2,1,Ho Chi Minh,Felixstowe,air,air,10458.0,19255.35,2.17,0.111,0.56,0.128,0.197
+S013-R3,1,Ho Chi Minh,Felixstowe,sea,open_ocean,25539.0,1762.15,41.41,0.193,2.76,0.228,0.157
+S013-R4,1,Ho Chi Minh,Port Said,sea,red_sea,11349.0,973.5,18.25,0.206,3.69,0.786,0.54
+S013-R4,2,Port Said,Felixstowe,sea,mediterranean,6083.0,553.07,10.65,0.179,3.0,0.23,0.585
+S014-R1,1,Singapore,Los Angeles,sea,open_ocean,14560.0,543.96,23.04,0.442,1.23,0.2,0.184
+S014-R1,2,Los Angeles,New York,rail,rail_corridor,4117.0,512.24,6.45,0.443,2.86,0.185,0.184
+S014-R2,1,Singapore,New York,sea,open_ocean,24414.0,851.62,38.56,0.322,4.47,0.176,0.38
+S014-R3,1,Singapore,Colombo,sea,open_ocean,3107.0,240.22,5.94,0.293,3.92,0.614,0.122
+S014-R3,2,Colombo,New York,sea,open_ocean,22271.0,738.77,34.4,0.514,2.17,1.0,0.162
+S014-R4,1,Singapore,New York,air,air,16524.0,11721.48,2.88,0.055,0.79,0.19,0.229
+S015-R1,1,Mumbai,Jebel Ali,sea,open_ocean,2944.0,228.52,5.38,0.165,0.79,0.216,0.246
+S015-R1,2,Jebel Ali,Hamburg,air,air,5227.0,3839.72,1.55,0.227,1.97,0.311,0.147
+S015-R2,1,Mumbai,Jebel Ali,sea,open_ocean,3034.0,227.05,5.59,0.354,5.32,0.549,0.117
+S015-R2,2,Jebel Ali,Hamburg,sea,open_ocean,22712.0,751.28,35.1,0.291,3.89,0.672,0.215
+S015-R3,1,Mumbai,Hamburg,sea,open_ocean,23075.0,790.51,35.76,0.409,4.84,0.316,0.152
+S015-R4,1,Mumbai,Hamburg,air,air,6683.0,4788.47,1.76,0.076,0.83,0.099,0.351
+S016-R1,1,Ho Chi Minh,Colombo,sea,open_ocean,5022.0,246.47,8.49,0.186,1.59,0.444,0.166
+S016-R1,2,Colombo,Felixstowe,air,air,9315.0,4726.74,2.07,0.314,1.42,1.0,0.282
+S016-R2,1,Ho Chi Minh,Felixstowe,sea,open_ocean,25721.0,654.27,40.51,0.212,2.75,0.457,0.165
+S016-R3,1,Ho Chi Minh,Felixstowe,air,air,10661.0,6275.86,2.13,0.084,0.78,0.224,0.143
+S016-R4,1,Ho Chi Minh,Lianyungang,sea,open_ocean,3584.0,230.47,6.61,0.391,3.42,0.472,0.542
+S016-R4,2,Lianyungang,Felixstowe,rail,rail_corridor,9749.0,706.54,13.7,0.229,1.35,0.823,0.206
+S017-R1,1,Shanghai,Rotterdam,air,air,9438.0,21778.79,2.09,0.034,0.59,0.293,0.161
+S017-R2,1,Shanghai,Port Said,sea,red_sea,13319.0,1301.97,21.45,0.123,6.8,0.411,0.778
+S017-R2,2,Port Said,Rotterdam,sea,mediterranean,6541.0,684.18,11.03,0.383,3.19,0.586,0.941
+S017-R3,1,Shanghai,Singapore,sea,open_ocean,4089.0,486.9,7.25,0.51,8.25,0.663,0.149
+S017-R3,2,Singapore,Rotterdam,sea,open_ocean,24037.0,2048.42,37.2,0.293,9.65,0.689,0.146
+S017-R4,1,Shanghai,Rotterdam,sea,open_ocean,27227.0,2518.78,43.44,0.215,3.12,0.496,0.121
+S018-R1,1,Busan,Savannah,air,air,12570.0,23691.45,2.41,0.091,1.13,0.184,0.165
+S018-R2,1,Busan,Panama,sea,open_ocean,15766.0,1117.61,25.85,0.195,2.14,0.211,0.172
+S018-R2,2,Panama,Savannah,air,air,2675.0,4990.55,1.3,0.21,0.83,0.288,0.24
+S018-R3,1,Busan,Savannah,sea,open_ocean,19456.0,1605.35,30.02,0.19,3.23,0.343,0.296
+S018-R4,1,Busan,Manzanillo,sea,open_ocean,12700.0,1036.01,20.53,0.376,7.29,0.942,0.106
+S018-R4,2,Manzanillo,Savannah,sea,open_ocean,6280.0,588.19,10.83,0.495,4.71,0.463,0.321
+S019-R1,1,Nhava Sheva,Port Said,sea,red_sea,5765.0,409.09,9.73,0.176,1.25,0.444,0.579
+S019-R1,2,Port Said,Antwerp,sea,mediterranean,6096.0,420.68,10.18,0.157,3.51,0.654,0.924
+S019-R2,1,Nhava Sheva,Salalah,sea,open_ocean,2288.0,279.56,4.51,0.239,7.24,1.0,0.191
+S019-R2,2,Salalah,Antwerp,sea,open_ocean,21594.0,1322.12,34.51,0.283,2.18,0.948,0.133
+S019-R3,1,Nhava Sheva,Antwerp,sea,open_ocean,21954.0,1236.45,34.04,0.117,4.41,0.376,0.07
+S019-R4,1,Nhava Sheva,Antwerp,air,air,7462.0,10244.55,1.79,0.105,0.99,0.222,0.149
+S020-R1,1,Nhava Sheva,Antwerp,air,air,7180.0,3329.47,1.76,0.071,0.94,0.22,0.092
+S020-R2,1,Nhava Sheva,Bandar Abbas,sea,open_ocean,2987.0,197.05,5.44,0.258,2.81,0.721,0.464
+S020-R2,2,Bandar Abbas,Antwerp,rail,rail_corridor,5528.0,444.57,8.49,0.356,3.08,0.496,0.641
+S020-R3,1,Nhava Sheva,Port Said,sea,red_sea,5816.0,251.54,9.88,0.156,3.14,0.419,0.825
+S020-R3,2,Port Said,Antwerp,sea,mediterranean,6358.0,269.02,11.0,0.323,5.13,0.829,0.494
+S020-R4,1,Nhava Sheva,Antwerp,sea,open_ocean,22721.0,504.39,36.41,0.26,2.44,0.72,0.236
+S021-R1,1,Nhava Sheva,Salalah,sea,open_ocean,2282.0,241.36,4.58,0.092,0.83,0.789,0.173
+S021-R1,2,Salalah,Antwerp,air,air,6105.0,6314.63,1.65,0.198,1.07,0.499,0.188
+S021-R2,1,Nhava Sheva,Antwerp,sea,open_ocean,22648.0,1216.46,36.61,0.262,3.46,0.364,0.158
+S021-R3,1,Nhava Sheva,Bandar Abbas,sea,open_ocean,2854.0,266.99,5.46,0.262,6.75,0.361,0.3
+S021-R3,2,Bandar Abbas,Antwerp,rail,rail_corridor,5352.0,863.6,8.25,0.196,1.35,0.478,0.226
+S021-R4,1,Nhava Sheva,Antwerp,air,air,7519.0,8595.83,1.85,0.05,0.29,0.142,0.221
+S022-R1,1,Shanghai,Lianyungang,sea,open_ocean,1128.0,182.36,2.78,0.175,5.16,0.537,0.449
+S022-R1,2,Lianyungang,Rotterdam,rail,rail_corridor,9020.0,895.97,13.22,0.316,2.82,0.879,0.224
+S022-R2,1,Shanghai,Port Said,sea,red_sea,13907.0,463.35,22.97,0.166,4.72,0.284,0.307
+S022-R2,2,Port Said,Rotterdam,sea,mediterranean,6275.0,303.53,10.43,0.121,1.93,0.769,0.699
+S022-R3,1,Shanghai,Rotterdam,sea,open_ocean,27563.0,877.79,43.36,0.283,1.86,0.431,0.148
+S022-R4,1,Shanghai,Rotterdam,air,air,9707.0,7050.2,2.09,0.039,0.83,0.098,0.168
+S023-R1,1,Mundra,Piraeus,sea,open_ocean,24203.0,942.23,38.9,0.261,2.99,0.363,0.375
+S023-R2,1,Mundra,Port Said,sea,red_sea,5565.0,327.71,9.42,0.257,3.34,0.413,0.655
+S023-R2,2,Port Said,Piraeus,sea,mediterranean,1151.0,180.23,2.75,0.212,2.88,0.42,0.423
+S023-R3,1,Mundra,Salalah,sea,open_ocean,2246.0,220.96,4.52,0.206,5.38,0.66,0.304
+S023-R3,2,Salalah,Piraeus,sea,open_ocean,23349.0,842.75,37.65,0.292,4.09,0.65,0.153
+S023-R4,1,Mundra,Piraeus,air,air,4958.0,4108.34,1.58,0.045,0.7,0.203,0.309
+S024-R1,1,Ho Chi Minh,Felixstowe,air,air,10539.0,4213.9,2.11,0.045,0.8,0.111,0.141
+S024-R2,1,Ho Chi Minh,Port Said,sea,red_sea,11502.0,332.8,18.83,0.203,4.42,0.344,0.596
+S024-R2,2,Port Said,Felixstowe,sea,mediterranean,6170.0,245.84,10.3,0.132,3.41,0.757,1.0
+S024-R3,1,Ho Chi Minh,Felixstowe,sea,open_ocean,25366.0,505.23,40.31,0.249,6.53,0.241,0.199
+S024-R4,1,Ho Chi Minh,Lianyungang,sea,open_ocean,3738.0,202.68,6.73,0.186,2.35,0.273,0.377
+S024-R4,2,Lianyungang,Felixstowe,rail,rail_corridor,9342.0,511.64,13.66,0.272,2.77,0.789,0.293
+S025-R1,1,Mumbai,Hamburg,air,air,6829.0,6727.18,1.75,0.042,0.75,0.218,0.084
+S025-R2,1,Mumbai,Port Said,sea,red_sea,5596.0,387.32,9.86,0.117,3.37,0.701,1.0
+S025-R2,2,Port Said,Hamburg,sea,mediterranean,6842.0,397.27,11.31,0.189,6.15,0.473,0.569
+S025-R3,1,Mumbai,Hamburg,sea,open_ocean,22828.0,1020.3,35.21,0.185,4.19,0.31,0.209
+S025-R4,1,Mumbai,Jebel Ali,sea,open_ocean,3036.0,276.07,5.77,0.128,1.04,0.235,0.147
+S025-R4,2,Jebel Ali,Hamburg,air,air,5205.0,5293.85,1.61,0.202,1.86,0.246,0.591
+S026-R1,1,Nhava Sheva,Antwerp,air,air,7224.0,2844.29,1.77,0.053,0.5,0.227,0.096
+S026-R2,1,Nhava Sheva,Antwerp,sea,open_ocean,21672.0,474.46,34.5,0.206,3.66,0.264,0.569
+S026-R3,1,Nhava Sheva,Jebel Ali,sea,open_ocean,3004.0,192.93,5.55,0.15,2.23,0.494,0.346
+S026-R3,2,Jebel Ali,Antwerp,air,air,5329.0,2389.41,1.62,0.17,2.7,0.233,0.131
+S026-R4,1,Nhava Sheva,Bandar Abbas,sea,open_ocean,3023.0,193.43,5.75,0.342,3.45,0.612,0.457
+S026-R4,2,Bandar Abbas,Antwerp,rail,rail_corridor,5243.0,350.74,8.12,0.269,2.16,0.344,0.448
+S027-R1,1,Ho Chi Minh,Colombo,sea,open_ocean,5117.0,574.15,8.82,0.252,3.4,0.417,0.211
+S027-R1,2,Colombo,Felixstowe,sea,open_ocean,21010.0,2049.75,32.55,0.292,8.2,0.559,0.147
+S027-R2,1,Ho Chi Minh,Felixstowe,sea,open_ocean,24809.0,2255.71,39.97,0.335,3.08,0.394,0.132
+S027-R3,1,Ho Chi Minh,Felixstowe,air,air,10960.0,22934.58,2.2,0.082,0.55,0.133,0.19
+S027-R4,1,Ho Chi Minh,Lianyungang,sea,open_ocean,3578.0,427.25,6.61,0.387,2.41,0.229,0.503
+S027-R4,2,Lianyungang,Felixstowe,rail,rail_corridor,9773.0,2496.44,14.33,0.279,2.06,0.389,0.493
+S028-R1,1,Chennai,Los Angeles,air,air,15401.0,2136.7,2.77,0.079,0.79,0.234,0.122
+S028-R2,1,Chennai,Seattle,sea,open_ocean,17742.0,241.07,28.67,0.3,1.28,0.289,0.55
+S028-R2,2,Seattle,Los Angeles,rail,rail_corridor,1592.0,171.73,3.14,0.247,3.88,0.442,0.238
+S028-R3,1,Chennai,Los Angeles,sea,open_ocean,18232.0,237.99,29.41,0.235,2.92,0.463,0.27
+S028-R4,1,Chennai,Singapore,sea,open_ocean,3356.0,166.14,6.26,0.14,2.73,0.622,0.264
+S028-R4,2,Singapore,Los Angeles,air,air,15189.0,2253.92,2.68,0.164,1.51,0.556,0.255
+S029-R1,1,Mundra,Salalah,sea,open_ocean,2151.0,296.92,4.33,0.446,4.07,1.0,0.164
+S029-R1,2,Salalah,Piraeus,sea,open_ocean,23402.0,1608.38,37.39,0.337,3.8,0.666,0.354
+S029-R2,1,Mundra,Piraeus,sea,open_ocean,23711.0,1929.29,36.54,0.322,4.79,0.53,0.13
+S029-R3,1,Mundra,Salalah,sea,open_ocean,2220.0,285.49,4.38,0.142,1.71,0.188,0.245
+S029-R3,2,Salalah,Piraeus,air,air,4070.0,7794.01,1.46,0.137,0.9,0.202,0.283
+S029-R4,1,Mundra,Piraeus,air,air,5004.0,8294.89,1.55,0.107,0.47,0.096,0.125
+S030-R1,1,Busan,Savannah,sea,open_ocean,18820.0,648.18,30.02,0.299,2.6,0.327,0.248
+S030-R2,1,Busan,Manzanillo,sea,open_ocean,12768.0,464.84,20.46,0.158,3.63,1.0,0.189
+S030-R2,2,Manzanillo,Savannah,sea,open_ocean,6274.0,324.27,10.93,0.268,5.43,0.721,0.199
+S030-R3,1,Busan,Manzanillo,sea,open_ocean,12656.0,502.9,20.09,0.098,1.18,0.233,0.367
+S030-R3,2,Manzanillo,Savannah,air,air,2856.0,1849.38,1.33,0.173,2.45,0.225,0.183
+S030-R4,1,Busan,Savannah,air,air,12793.0,7764.29,2.37,0.069,0.68,0.119,0.113
