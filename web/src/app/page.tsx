@@ -296,6 +296,8 @@ export default function PlanShipmentPage() {
           onChangeScenario={handleScenarioChange}
           onReset={handleReset}
           defaultPenalty={shipment.penalty_per_day}
+          routes={routes}
+          minOnTime={shipment.min_on_time}
         />
       </div>
 

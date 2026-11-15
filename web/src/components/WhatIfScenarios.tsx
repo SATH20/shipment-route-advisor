@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { RouteItem } from "@/lib/types";
 import { formatDays, formatMoney, translateRouteName } from "@/lib/words";
 import { getRouteColor } from "./RouteMap";
 
@@ -18,6 +19,8 @@ interface WhatIfScenariosProps {
   onChangeScenario: (state: ScenarioState) => void;
   onReset: () => void;
   defaultPenalty: number;
+  routes?: RouteItem[];
+  minOnTime?: number;
 }
 
 const EVENTS = [
@@ -50,6 +53,8 @@ export default function WhatIfScenarios({
   onChangeScenario,
   onReset,
   defaultPenalty,
+  routes,
+  minOnTime,
 }: WhatIfScenariosProps) {
   const toggleEvent = (eventId: string) => {
     const isChecked = scenarioState.activeEvents.includes(eventId);
@@ -68,14 +73,46 @@ export default function WhatIfScenarios({
     scenarioState.deadlineShift !== 0 ||
     scenarioState.carbonPrice !== 90;
 
-  const baseTitle = basePickName
-    ? translateRouteName(basePickName).title
-    : "No route";
   const currentTitle = currentPickName
     ? translateRouteName(currentPickName).title
     : "No route";
   const pickColor = currentPickName ? getRouteColor(currentPickName) : "#1d4ed8";
   const isChanged = basePickName !== currentPickName;
+
+  let changeExplanation = "";
+  if (isChanged && basePickName && currentPickName && routes) {
+    const baseRoute = routes.find((r) => r.name === basePickName);
+    const currRoute = routes.find((r) => r.name === currentPickName);
+    const oldTitle = translateRouteName(basePickName).title;
+    const newTitle = translateRouteName(currentPickName).title;
+
+    if (baseRoute) {
+      if (
+        baseRoute.status === "fails reliability" ||
+        (baseRoute.metrics && minOnTime && baseRoute.metrics.p_on_time < minOnTime)
+      ) {
+        const onTimePct = baseRoute.metrics
+          ? Math.round(baseRoute.metrics.p_on_time * 100)
+          : 0;
+        const targetPct = minOnTime ? Math.round(minOnTime * 100) : 90;
+        changeExplanation = `Now: ${newTitle}. ${oldTitle} arrives on time only ${onTimePct}% of the time, below the ${targetPct}% this cargo needs.`;
+      } else if (baseRoute.status === "not allowed") {
+        changeExplanation = `Now: ${newTitle}. ${oldTitle} is no longer allowed under current rules.`;
+      } else if (baseRoute.metrics && currRoute?.metrics) {
+        if (currRoute.metrics.exp_total < baseRoute.metrics.exp_total) {
+          changeExplanation = `Now: ${newTitle}. It costs ${formatMoney(
+            currRoute.metrics.exp_total
+          )} on average, beating ${formatMoney(baseRoute.metrics.exp_total)} for ${oldTitle}.`;
+        } else {
+          changeExplanation = `Now: ${newTitle}. It provides better protection with a bad-luck cost of ${formatMoney(
+            currRoute.metrics.cvar_total
+          )}, against ${formatMoney(baseRoute.metrics.cvar_total)} for ${oldTitle}.`;
+        }
+      } else {
+        changeExplanation = `Now: ${newTitle}. Switched from ${oldTitle} to match the new world conditions.`;
+      }
+    }
+  }
 
   return (
     <section className="bg-card border border-line rounded-3xl p-7 md:p-9 shadow-sm mt-8">
@@ -230,8 +267,8 @@ export default function WhatIfScenarios({
           {currentTitle}
         </span>
         <span className="text-xs md:text-sm text-muted">
-          {isChanged
-            ? `Changed! Switched from ${baseTitle} to ${currentTitle} due to new world conditions.`
+          {isChanged && changeExplanation
+            ? changeExplanation
             : hasModifications
             ? "Same pick as before. The engine re-ran all 5,000 trips with the new conditions."
             : "Turn on a change above to see if the pick moves."}
