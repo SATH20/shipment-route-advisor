@@ -86,7 +86,26 @@
     transform: none !important;
     stroke-dashoffset: 0 !important;
   }
-  .ping {
+  .ping,
+  .animate-pulse {
     animation: none !important;
   }
+  .travel-dot {
+    display: none;
+  }
+  .lift:hover {
+    transform: none !important;
+  }
+  .lift,
+  .seg,
+  [class*="transition"] {
+    transition: none !important;
+  }
 }
+
+/* One visible focus style for every control */
+:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+

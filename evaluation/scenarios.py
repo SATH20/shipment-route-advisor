@@ -32,20 +32,32 @@ from engine.optimizer import NOT_ALLOWED, UNRELIABLE, recommend  # noqa: E402
 from engine.simulation import simulate_route  # noqa: E402
 
 
+# Scenario parameters (also used to describe the events in the web app)
+CRISIS_GEO_RISK = 0.97
+CRISIS_EXTRA_DELAY_PROB = 0.3
+CRISIS_EXTRA_DELAY_DAYS = 5
+REOPEN_GEO_RISK = 0.12
+REOPEN_DELAY_FACTOR = 0.8
+HUB_CONGESTION_FACTOR = 1.6
+HUB_DELAY_PROB_FACTOR = 1.5
+HUB_EXTRA_DELAY_DAYS = 2
+AIR_PRICE_FACTOR = 1.8
+
+
 def red_sea_crisis(legs: pd.DataFrame) -> pd.DataFrame:
     legs = legs.copy()
     m = legs["region"] == "red_sea"
-    legs.loc[m, "geo_risk"] = 0.97
-    legs.loc[m, "delay_prob"] = (legs.loc[m, "delay_prob"] + 0.3).clip(upper=1.0)
-    legs.loc[m, "mean_delay_days"] = legs.loc[m, "mean_delay_days"] + 5
+    legs.loc[m, "geo_risk"] = CRISIS_GEO_RISK
+    legs.loc[m, "delay_prob"] = (legs.loc[m, "delay_prob"] + CRISIS_EXTRA_DELAY_PROB).clip(upper=1.0)
+    legs.loc[m, "mean_delay_days"] = legs.loc[m, "mean_delay_days"] + CRISIS_EXTRA_DELAY_DAYS
     return legs
 
 
 def red_sea_reopens(legs: pd.DataFrame) -> pd.DataFrame:
     legs = legs.copy()
     m = legs["region"] == "red_sea"
-    legs.loc[m, "geo_risk"] = 0.12
-    legs.loc[m, "delay_prob"] = legs.loc[m, "delay_prob"] * 0.8
+    legs.loc[m, "geo_risk"] = REOPEN_GEO_RISK
+    legs.loc[m, "delay_prob"] = legs.loc[m, "delay_prob"] * REOPEN_DELAY_FACTOR
     return legs
 
 
@@ -53,16 +65,16 @@ def hub_congestion(legs: pd.DataFrame) -> pd.DataFrame:
     legs = legs.copy()
     n_legs = legs.groupby("route_id")["leg_no"].transform("max")
     m = n_legs > 1                       # any leg that starts or ends at a transshipment hub
-    legs.loc[m, "congestion"] = (legs.loc[m, "congestion"] * 1.6).clip(upper=1.0)
-    legs.loc[m, "delay_prob"] = (legs.loc[m, "delay_prob"] * 1.5).clip(upper=1.0)
-    legs.loc[m, "mean_delay_days"] = legs.loc[m, "mean_delay_days"] + 2
+    legs.loc[m, "congestion"] = (legs.loc[m, "congestion"] * HUB_CONGESTION_FACTOR).clip(upper=1.0)
+    legs.loc[m, "delay_prob"] = (legs.loc[m, "delay_prob"] * HUB_DELAY_PROB_FACTOR).clip(upper=1.0)
+    legs.loc[m, "mean_delay_days"] = legs.loc[m, "mean_delay_days"] + HUB_EXTRA_DELAY_DAYS
     return legs
 
 
 def air_capacity_crunch(legs: pd.DataFrame) -> pd.DataFrame:
     legs = legs.copy()
     m = legs["mode"] == "air"
-    legs.loc[m, "cost_usd"] = legs.loc[m, "cost_usd"] * 1.8
+    legs.loc[m, "cost_usd"] = legs.loc[m, "cost_usd"] * AIR_PRICE_FACTOR
     return legs
 
 
@@ -71,6 +83,30 @@ SCENARIOS: Dict[str, Callable[[pd.DataFrame], pd.DataFrame]] = {
     "Red Sea reopens": red_sea_reopens,
     "Hub congestion spike": hub_congestion,
     "Air capacity crunch": air_capacity_crunch,
+}
+
+
+# Plain-language titles and descriptions for the web app (numbers come from the constants above)
+EVENT_INFO: Dict[str, Dict[str, str]] = {
+    "Red Sea crisis": {
+        "title": "Trouble in the Red Sea",
+        "description": (f"Ships through the Red Sea face attacks. Delays there become much more likely "
+                        f"and last {CRISIS_EXTRA_DELAY_DAYS} days longer."),
+    },
+    "Red Sea reopens": {
+        "title": "The Red Sea calms down",
+        "description": (f"Danger in the Red Sea drops to a normal level and delays there "
+                        f"become {1 - REOPEN_DELAY_FACTOR:.0%} less likely."),
+    },
+    "Hub congestion spike": {
+        "title": "Busy stopover ports",
+        "description": (f"Routes that change ships or trains at a port are delayed "
+                        f"{HUB_DELAY_PROB_FACTOR:g} times as often, and each delay lasts {HUB_EXTRA_DELAY_DAYS} days longer."),
+    },
+    "Air capacity crunch": {
+        "title": "Plane tickets cost more",
+        "description": f"Every flight costs {AIR_PRICE_FACTOR - 1:.0%} more because planes are full.",
+    },
 }
 
 

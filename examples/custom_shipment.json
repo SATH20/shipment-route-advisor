@@ -1,0 +1,107 @@
+{
+  "shipment_id": "CUSTOM-001",
+  "origin": "Chennai",
+  "destination": "Rotterdam",
+  "cargo_type": "auto spare parts",
+  "profile": "standard",
+  "weight_kg": 2400,
+  "cargo_value_usd": 85000,
+  "deadline_days": 40,
+  "hazardous": false,
+  "avoid_regions": [],
+  "routes": [
+    {
+      "name": "Direct sea",
+      "legs": [
+        {
+          "from_hub": "Chennai",
+          "to_hub": "Rotterdam",
+          "mode": "sea",
+          "region": "open_ocean",
+          "distance_km": 22038,
+          "cost_usd": 1260.72,
+          "transit_days": 34.9,
+          "delay_prob": 0.24,
+          "mean_delay_days": 3.5,
+          "congestion": 0.4,
+          "geo_risk": 0.18
+        }
+      ]
+    },
+    {
+      "name": "Suez corridor",
+      "legs": [
+        {
+          "from_hub": "Chennai",
+          "to_hub": "Port Said",
+          "mode": "sea",
+          "region": "red_sea",
+          "distance_km": 7655,
+          "cost_usd": 535.81,
+          "transit_days": 12.78,
+          "delay_prob": 0.22,
+          "mean_delay_days": 3.0,
+          "congestion": 0.45,
+          "geo_risk": 0.7
+        },
+        {
+          "from_hub": "Port Said",
+          "to_hub": "Rotterdam",
+          "mode": "sea",
+          "region": "mediterranean",
+          "distance_km": 6348,
+          "cost_usd": 469.94,
+          "transit_days": 10.77,
+          "delay_prob": 0.18,
+          "mean_delay_days": 2.5,
+          "congestion": 0.4,
+          "geo_risk": 0.6
+        }
+      ]
+    },
+    {
+      "name": "Sea + air",
+      "legs": [
+        {
+          "from_hub": "Chennai",
+          "to_hub": "Colombo",
+          "mode": "sea",
+          "region": "open_ocean",
+          "distance_km": 1208,
+          "cost_usd": 210.88,
+          "transit_days": 2.86,
+          "delay_prob": 0.15,
+          "mean_delay_days": 1.0,
+          "congestion": 0.35,
+          "geo_risk": 0.12
+        },
+        {
+          "from_hub": "Colombo",
+          "to_hub": "Jebel Ali",
+          "mode": "sea",
+          "region": "open_ocean",
+          "distance_km": 4226,
+          "cost_usd": 362.99,
+          "transit_days": 7.5,
+          "delay_prob": 0.2,
+          "mean_delay_days": 1.5,
+          "congestion": 0.5,
+          "geo_risk": 0.2
+        },
+        {
+          "from_hub": "Jebel Ali",
+          "to_hub": "Rotterdam",
+          "mode": "air",
+          "region": "air",
+          "distance_km": 5460,
+          "cost_usd": 7357.2,
+          "transit_days": 1.61,
+          "delay_prob": 0.07,
+          "mean_delay_days": 0.6,
+          "congestion": 0.2,
+          "geo_risk": 0.1
+        }
+      ]
+    }
+  ]
+}

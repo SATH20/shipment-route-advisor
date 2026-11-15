@@ -118,3 +118,30 @@ def test_api_s020_passages():
     assert "Cape of Good Hope" in direct_sea["passages"]
     assert "Suez Canal" in suez["passages"]
 
+
+
+def test_detail_has_settings_runner_up_and_stop_coords():
+    from fastapi.testclient import TestClient
+    from api.main import app
+    from config import assumptions as A
+    from geography import PORTS
+    d = TestClient(app).get("/api/shipments/S020").json()
+    assert d["settings"]["n_sims"] == A.N_SIMS
+    assert d["settings"]["confidence_runs"] == A.CONFIDENCE_RUNS
+    assert d["settings"]["default_carbon_price"] == A.CARBON_PRICE_USD_PER_TONNE
+    # S020 is play-safe: the runner-up is ranked on the worst-10% cost, i.e. Direct sea (README example)
+    names = {r["id"]: r["name"] for r in d["routes"]}
+    assert names[d["runner_up_id"]] == "Direct sea"
+    for r in d["routes"]:
+        assert len(r["stop_coords"]) == len(r["stops"])
+        for name, (lat, lon) in zip(r["stops"], r["stop_coords"]):
+            assert (lat, lon) == PORTS[name]
+
+
+def test_events_endpoint_lists_every_scenario():
+    from fastapi.testclient import TestClient
+    from api.main import app
+    from evaluation.scenarios import SCENARIOS
+    ev = TestClient(app).get("/api/events").json()
+    assert [e["id"] for e in ev] == list(SCENARIOS)
+    assert all(e["title"] and e["description"] for e in ev)

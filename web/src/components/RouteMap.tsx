@@ -5,7 +5,7 @@ import { geoEquirectangular, geoPath, geoGraticule } from "d3-geo";
 import * as topojson from "topojson-client";
 import landData from "world-atlas/land-110m.json";
 import { RouteItem } from "@/lib/types";
-import { translateRouteName } from "@/lib/words";
+import { REJECTED, translateRouteName } from "@/lib/words";
 
 interface RouteMapProps {
   routes: RouteItem[];
@@ -29,8 +29,45 @@ const ROUTE_COLORS: Record<string, string> = {
   "Ship with a stop": "#0891b2",
 };
 
-export function getRouteColor(name: string): string {
+// Lighter versions of the same hues for text on the dark pick panel (contrast at least 4.5:1)
+const ROUTE_COLORS_ON_DARK: Record<string, string> = {
+  "Air freight": "#a78bfa",
+  "Direct sea": "#7aa2ff",
+  "Suez corridor": "#ff8a7d",
+  "Sea + rail": "#4ade80",
+  "Sea + air": "#fbbf24",
+  "Sea via hub": "#22d3ee",
+};
+
+export function getRouteColor(name: string, onDark: boolean = false): string {
+  if (onDark) return ROUTE_COLORS_ON_DARK[name] || "#7aa2ff";
   return ROUTE_COLORS[name] || "#1d4ed8";
+}
+
+type Box = { x: number; y: number; w: number; h: number };
+const overlaps = (a: Box, b: Box) =>
+  a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+/** Put a label next to its point, on the first side that does not cover another label. */
+function placeLabel(pt: [number, number], text: string, size: number, placed: Box[]) {
+  const w = text.length * size * 0.6 + 4;
+  const h = size + 4;
+  const options = [
+    { x: pt[0] + 10, y: pt[1] - 8, anchor: "start" },
+    { x: pt[0] + 10, y: pt[1] + size + 6, anchor: "start" },
+    { x: pt[0] - 10, y: pt[1] - 8, anchor: "end" },
+    { x: pt[0] - 10, y: pt[1] + size + 6, anchor: "end" },
+  ];
+  for (const o of options) {
+    const box = { x: o.anchor === "end" ? o.x - w : o.x, y: o.y - size, w, h };
+    if (!placed.some((p) => overlaps(p, box))) {
+      placed.push(box);
+      return o;
+    }
+  }
+  const o = options[0];
+  placed.push({ x: o.x, y: o.y - size, w, h });
+  return o;
 }
 
 export default function RouteMap({
@@ -199,10 +236,13 @@ export default function RouteMap({
           // Has intermediate hubs
           for (let i = 1; i < route.stops.length - 1; i++) {
             const stopName = route.stops[i];
-            // Find coordinate of this stop
-            const leg = route.coords[i];
+            // the hub's own position (route.coords is the drawn path, not the stops)
+            const leg = route.stop_coords?.[i];
             if (leg) {
-              const pt = proj([leg[1], leg[0]]);
+              let lon = leg[1];
+              while (lon - centerLon > 180) lon -= 360;
+              while (lon - centerLon < -180) lon += 360;
+              const pt = proj([lon, leg[0]]);
               if (pt && !stops.some((s) => s.name === stopName)) {
                 stops.push({
                   name: stopName,
@@ -255,222 +295,126 @@ export default function RouteMap({
 
   const recommendedRoute = projectedRoutes.find((r) => r.isRecommended);
 
+  // Label placement: origin and destination first, then hubs, avoiding overlaps
+  const labels = useMemo(() => {
+    const placed: Box[] = [];
+    const out: { key: string; text: string; pt: [number, number]; size: number; x: number; y: number; anchor: string; color: string; bold: boolean }[] = [];
+    const add = (key: string, text: string, pt: [number, number] | null, size: number, color: string, bold: boolean) => {
+      if (!pt) return;
+      const o = placeLabel(pt, text, size, placed);
+      out.push({ key, text, pt, size, x: o.x, y: o.y, anchor: o.anchor, color, bold });
+    };
+    add("origin", origin, originPt as [number, number] | null, 14, "#0f1b2d", true);
+    add("dest", destination, destPt as [number, number] | null, 14, "#0f1b2d", true);
+    for (const s of intermediateStops) add(`hub-${s.name}`, s.name, s.pt, 12, s.color, false);
+    return out;
+  }, [origin, destination, originPt, destPt, intermediateStops]);
+
+  const pickName = recommendedRoute
+    ? translateRouteName(recommendedRoute.route.name, recommendedRoute.route.passages).title
+    : null;
+  const mapLabel =
+    `Map of ${routes.length} ways from ${origin} to ${destination}.` +
+    (pickName ? ` Our pick, ${pickName}, is the thick line.` : "");
+
   return (
     <div className="flex flex-wrap lg:flex-nowrap gap-6 items-stretch">
-      {/* Map Container */}
-      <figure className="flex-[999_1_560px] min-w-0 m-0 relative rounded-2xl overflow-hidden border border-[#dfe7f0] aspect-[1120/998] md:aspect-[16/10] bg-ocean shadow-inner">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          role="img"
-          aria-label={`Shipping route map from ${origin} to ${destination}`}
-          className="w-full h-full block"
-        >
-          {/* Ocean Background */}
+      <figure className="flex-[999_1_560px] min-w-0 m-0 relative rounded-2xl overflow-hidden border border-[#dfe7f0] bg-ocean">
+        <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={mapLabel} className="w-full h-auto block">
           <rect width={width} height={height} fill="#eaf1f8" />
+          <path d={graticulePathString} fill="none" stroke="#d5deea" strokeWidth="0.8" strokeDasharray="2 3" opacity="0.6" />
+          <path d={landPathString} fill="#f7f4ec" stroke="#d9d4c8" strokeWidth="1" strokeLinejoin="round" />
 
-          {/* Graticule lines */}
-          <path
-            d={graticulePathString}
-            fill="none"
-            stroke="#d5dbe3"
-            strokeWidth="0.8"
-            strokeDasharray="2 3"
-            opacity="0.6"
-          />
-
-          {/* Land Outlines */}
-          <path
-            d={landPathString}
-            fill="#f7f4ec"
-            stroke="#d5dbe3"
-            strokeWidth="1"
-            strokeLinejoin="round"
-          />
-
-          {/* Route Paths */}
           {sortedRoutes.map((r, idx) => {
             const isRec = r.isRecommended;
-            const isRejected =
-              r.status === "not allowed" ||
-              r.status === "fails reliability" ||
-              r.status === "dominated";
-            const strokeWidth = isRec ? 8 : isRejected ? 2.5 : 4;
-            const strokeDash = isRejected
-              ? r.status === "dominated"
-                ? "6 5"
-                : "3 4"
-              : undefined;
-            const opacity = isRec ? 1 : isRejected ? 0.45 : 0.75;
-            const animClass = `draw d${(idx % 4) + 1}`;
-
+            const isRejected = REJECTED.includes(r.status);
             return (
               <path
                 key={r.route.id}
                 id={isRec ? "recommended-map-path" : undefined}
-                className={animClass}
+                className={`draw d${(idx % 4) + 1}`}
                 pathLength="1"
                 d={r.pathString}
                 fill="none"
                 stroke={r.color}
-                strokeWidth={strokeWidth}
-                strokeDasharray={strokeDash}
+                strokeWidth={isRec ? 8 : isRejected ? 2.5 : 4}
+                strokeDasharray={isRejected ? (r.status === "dominated" ? "6 5" : "3 4") : undefined}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity={opacity}
+                opacity={isRec ? 1 : isRejected ? 0.45 : 0.75}
               />
             );
           })}
 
-          {/* Animated traveling dot along the recommended route */}
           {recommendedRoute && (
-            <circle
-              r="6"
-              fill={recommendedRoute.color}
-              stroke="#ffffff"
-              strokeWidth="2.5"
-            >
-              <animateMotion
-                dur="4.5s"
-                repeatCount="indefinite"
-                begin="1.2s"
-              >
+            <circle className="travel-dot" r="6" fill={recommendedRoute.color} stroke="#ffffff" strokeWidth="2.5">
+              <animateMotion dur="4.5s" repeatCount="indefinite" begin="1.2s">
                 <mpath href="#recommended-map-path" />
               </animateMotion>
             </circle>
           )}
 
-          {/* Intermediate Stops */}
           {intermediateStops.map((stop) => (
-            <g key={stop.name}>
-              <circle
-                cx={stop.pt[0]}
-                cy={stop.pt[1]}
-                r="5"
-                fill="#ffffff"
-                stroke={stop.color}
-                strokeWidth="3"
-              />
-              <text
-                x={stop.pt[0] + 8}
-                y={stop.pt[1] - 8}
-                fontFamily="Inter, sans-serif"
-                fontSize="12"
-                fontWeight="600"
-                fill="#0f1b2d"
-                stroke="#f7f4ec"
-                strokeWidth="3"
-                paintOrder="stroke"
-              >
-                {stop.name}
-              </text>
-            </g>
+            <circle key={stop.name} cx={stop.pt[0]} cy={stop.pt[1]} r="5" fill="#ffffff" stroke={stop.color} strokeWidth="3" />
           ))}
 
-          {/* Origin & Destination Markers */}
           {originPt && (
             <g>
-              <circle
-                className="ping"
-                cx={originPt[0]}
-                cy={originPt[1]}
-                r="7"
-                fill="#0f1b2d"
-              />
-              <circle
-                cx={originPt[0]}
-                cy={originPt[1]}
-                r="7"
-                fill="#0f1b2d"
-                stroke="#ffffff"
-                strokeWidth="2.5"
-              />
-              <text
-                x={originPt[0] + 10}
-                y={originPt[1] - 8}
-                fontFamily="Inter, sans-serif"
-                fontSize="14"
-                fontWeight="700"
-                fill="#0f1b2d"
-                stroke="#f7f4ec"
-                strokeWidth="4"
-                paintOrder="stroke"
-              >
-                {origin}
-              </text>
+              <circle className="ping" cx={originPt[0]} cy={originPt[1]} r="7" fill="#0f1b2d" />
+              <circle cx={originPt[0]} cy={originPt[1]} r="7" fill="#0f1b2d" stroke="#ffffff" strokeWidth="2.5" />
             </g>
           )}
+          {destPt && <circle cx={destPt[0]} cy={destPt[1]} r="7" fill="#0f1b2d" stroke="#ffffff" strokeWidth="2.5" />}
 
-          {destPt && (
-            <g>
-              <circle
-                cx={destPt[0]}
-                cy={destPt[1]}
-                r="7"
-                fill="#0f1b2d"
-                stroke="#ffffff"
-                strokeWidth="2.5"
-              />
-              <text
-                x={destPt[0] + 10}
-                y={destPt[1] - 8}
-                fontFamily="Inter, sans-serif"
-                fontSize="14"
-                fontWeight="700"
-                fill="#0f1b2d"
-                stroke="#f7f4ec"
-                strokeWidth="4"
-                paintOrder="stroke"
-              >
-                {destination}
-              </text>
-            </g>
-          )}
+          {labels.map((l) => (
+            <text
+              key={l.key}
+              x={l.x}
+              y={l.y}
+              textAnchor={l.anchor as "start" | "end"}
+              fontFamily="Inter, sans-serif"
+              fontSize={l.size}
+              fontWeight={l.bold ? 700 : 600}
+              fill="#0f1b2d"
+              stroke="#f7f4ec"
+              strokeWidth={l.bold ? 4 : 3}
+              paintOrder="stroke"
+            >
+              {l.text}
+            </text>
+          ))}
         </svg>
       </figure>
 
-      {/* Legend list */}
-      <ul className="flex-[1_1_300px] list-none m-0 p-0 flex flex-col gap-2.5 justify-center">
+      <ul className="flex-[1_1_300px] list-none m-0 p-0 flex flex-col gap-3 justify-center" aria-label="Map key">
         {routes.map((r) => {
           const { title, subtitle } = translateRouteName(r.name, r.passages);
-          const color = getRouteColor(r.name);
           const isRec = r.id === recommendedId;
-
           return (
             <li
               key={r.id}
-              className={`flex gap-3 items-start p-3.5 rounded-xl border transition-all ${
-                isRec
-                  ? "bg-white border-line shadow-sm ring-2 ring-good/40"
-                  : "bg-white/80 border-line/60"
+              className={`flex gap-3 items-start p-3.5 rounded-xl border bg-card ${
+                isRec ? "border-good ring-2 ring-good/20" : "border-line"
               }`}
             >
-              <span
-                className="flex-none w-7 h-1.5 rounded-full mt-2"
-                style={{ backgroundColor: color }}
-              />
+              <span className="flex-none w-7 h-1.5 rounded-full mt-2" style={{ backgroundColor: getRouteColor(r.name) }} aria-hidden="true" />
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <strong className="text-[15px] font-semibold text-ink">
-                    {title}
-                  </strong>
+                <div className="flex flex-wrap items-center gap-2">
+                  <strong className="text-[15px] font-semibold text-ink">{title}</strong>
                   {isRec && (
-                    <span className="text-[11px] font-bold text-good bg-good/10 px-2 py-0.5 rounded-full">
-                      Our pick
-                    </span>
+                    <span className="text-xs font-bold text-good bg-[#eef8f1] px-2 py-0.5 rounded-full">Our pick</span>
                   )}
                 </div>
                 <span className="text-[13px] text-muted block leading-snug">
-                  {subtitle
-                    ? `Passage: ${subtitle}`
-                    : `${r.planned_days.toFixed(0)} planned days, ${r.stops.join(" → ")}`}
+                  {r.stops.join(" to ")}
+                  {subtitle ? `, ${subtitle}` : ""}
                 </span>
               </div>
             </li>
           );
         })}
-
-        <li className="mt-auto text-[12px] text-subtle leading-relaxed pt-2">
-          Lines show the ports and sea passages each way uses, not exact tracks.
+        <li className="text-xs text-subtle leading-relaxed pt-1">
+          Lines show the ports and sea passages each way uses, not exact tracks. Dashed lines are ways we ruled out.
         </li>
       </ul>
     </div>

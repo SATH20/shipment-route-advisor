@@ -6,18 +6,46 @@ For each shipment I remove routes that break a rule, simulate the rest 5,000 tim
 
 ## Running it
 
+Needs Python 3.11+ and Node 20+. No API key is needed.
+
 ```bash
 pip install -r requirements.txt
-python generate_dataset.py                    # creates the data (30 shipments, 120 routes)
-python -m engine.optimizer S020               # recommendation for one shipment
-python -m services.explanation_service S020   # explanation, confidence, what would change it
-python -m evaluation.evaluate                 # comparison with baselines
-python -m evaluation.scenarios                # Red Sea, hub congestion, air price shock
-streamlit run dashboard/app.py                # dashboard
-python -m pytest                              # 34 tests
+python generate_dataset.py          # writes data/ and evaluation/ground_truth/ (same bytes every run)
+python -m evaluation.evaluate       # writes evaluation/results/*.csv
+python -m evaluation.scenarios      # writes evaluation/results/scenarios.csv
+python -m pytest
 ```
 
-No API key is needed. An LLM can optionally rewrite the explanations (see the last section).
+Then start the API and the web app in two terminals:
+
+```bash
+uvicorn api.main:app --port 8000
+```
+
+```bash
+cd web
+npm install
+npm run build      # optional: production build check (npm run lint and npx tsc --noEmit also work)
+npm run dev        # then open http://localhost:3000
+```
+
+The web app calls the API at `http://localhost:8000`. To use other ports, set `NEXT_PUBLIC_API_URL` for the web app and `ALLOWED_ORIGINS` (comma-separated) for the API, for example `ALLOWED_ORIGINS=http://localhost:3001 uvicorn api.main:app --port 8001` and `NEXT_PUBLIC_API_URL=http://localhost:8001 npm run dev -- -p 3001`.
+
+An LLM can optionally rewrite the explanations (see Design choices).
+
+## Your own shipment
+
+The advisor also takes a shipment that is not in the dataset. Describe it in JSON (shipment fields plus 1 to 6 routes of 1 to 4 legs each; see `examples/custom_shipment.json`, Chennai to Rotterdam) and run the same pipeline:
+
+```bash
+curl -X POST "http://localhost:8000/api/recommend" -H "Content-Type: application/json" --data @examples/custom_shipment.json
+```
+
+```bash
+python -m engine.optimizer --file examples/custom_shipment.json
+```
+
+The API returns the same response as `GET /api/shipments/{id}` (pick, every route's numbers, explanation, confidence and what would change it); add `?mode=play_safe` or `?mode=expected` to override the profile. `delay_penalty_usd_per_day` is optional and defaults to the profile's share of cargo value. Out-of-range values (for example a probability above 1), unknown profiles, modes or regions, and legs that do not connect origin to destination are rejected with a 422 that names the field. Ports the map does not know are fine; their route just comes back without map coordinates.
 
 ## How a route is scored
 
@@ -72,7 +100,9 @@ engine/                    constraints, simulation, pareto, scoring, optimizer, 
 services/                  explanation text and the check on LLM output
 evaluation/                baselines, metrics, evaluation, scenarios
 evaluation/ground_truth/   true parameters, only used for evaluation
-dashboard/                 Streamlit app (overview with route map, route optimizer, risk simulator, scenarios)
+api/                       FastAPI layer over the engine (GET by shipment id, POST /api/recommend for your own shipment)
+examples/                  a shipment that is not in the dataset, as JSON
+web/                       Next.js frontend: plan a shipment, how it decides, does it work
 tests/                     unit tests
 ```
 
@@ -80,7 +110,7 @@ tests/                     unit tests
 
 The data is synthetic: 30 shipments on 8 trade lanes (for example Mumbai to Hamburg and Shanghai to Rotterdam), 4 candidate routes each.
 
-Routes are chains of legs between real ports. Leg distances come from a small sea-lane network in `geography.py` (waypoints at Malacca, Bab-el-Mandeb, Suez, Gibraltar, the Cape of Good Hope, Panama and so on), and freight and transit time follow from distance and mode. The dashboard map draws the same paths. Route types:
+Routes are chains of legs between real ports. Routes have one to three legs; single-leg routes (direct sea, air) are allowed, and the data model accepts any chain of legs. Leg distances come from a small sea-lane network in `geography.py` (waypoints at Malacca, Bab-el-Mandeb, Suez, Gibraltar, the Cape of Good Hope, Panama and so on), and freight and transit time follow from distance and mode. The web app map draws the same paths. Route types:
 
 - Direct sea: one sea leg. I assume it avoids the Red Sea, so Asia and India to Europe go around Africa.
 - Suez corridor: through the Red Sea and the Suez Canal. Much shorter (Shanghai to Rotterdam: about 33 days instead of 43) but with high geopolitical risk. Only on lanes where Suez is the short way.
@@ -99,12 +129,12 @@ All strategies make their choices from the noisy estimates and follow the same h
 
 | Strategy | Avg regret | Same as oracle | Meets on-time target | Avg worst-10% cost | Total CO2 (t) |
 |---|---|---|---|---|---|
-| Always cheapest | $1,299 | 76% | 93% | $8,730 | 17.3 |
+| Always cheapest | $1,297 | 76% | 93% | $8,720 | 17.3 |
 | Always fastest | $5,714 | 30% | 100% | $10,541 | 218.5 |
 | Always safest | $4,055 | 43% | 100% | $8,768 | 203.7 |
 | Fixed weights (0.4/0.3/0.15/0.15) | $6,093 | 47% | 100% | $11,111 | 161.4 |
-| Advisor, expected cost for every shipment | $452 | 82% | 100% | $6,558 | 60.0 |
-| Advisor, play-safe for every shipment | $831 | 67% | 100% | $6,007 | 88.0 |
+| Advisor, expected cost for every shipment | $452 | 82% | 100% | $6,559 | 60.0 |
+| Advisor, play-safe for every shipment | $831 | 67% | 100% | $6,008 | 88.0 |
 | Advisor (profile settings) | $315 | 91% | 100% | $6,421 | 67.3 |
 | Oracle | $0 | 100% | 100% | $6,083 | 67.0 |
 
@@ -114,29 +144,29 @@ With larger or smaller estimation errors, the average regret was:
 |---|---|---|---|
 | Advisor (profile settings) | $0 | $315 | $319 |
 | Advisor, play-safe for every shipment | $424 | $831 | $1,027 |
-| Always cheapest | $1,299 | $1,299 | $1,299 |
+| Always cheapest | $1,297 | $1,297 | $1,297 |
 | Fixed weights | $6,442 | $6,093 | $6,110 |
 
 What I take from this:
 
 - With perfect risk estimates the advisor's regret is $0. With 30% estimation error it makes the oracle's choice 91% of the time, and at 60% error 83% of the time; the average regret barely changes ($315 to $319) because the decisions it gets wrong are close calls.
-- Always picking the cheapest allowed route has the lowest average cost ($1,987 vs $3,199) and the lowest CO2, but it misses the on-time target for 25% of express shipments, and its worst-case cost on high-value cargo is 2.6 times higher ($17,584 vs $6,834).
-- For express cargo the advisor spends more on average ($7,813 vs $3,234 for cheapest) because it pays for reliability. Its worst case there is no better than cheapest's.
+- Always picking the cheapest allowed route has the lowest average cost ($1,986 vs $3,200) and the lowest CO2, but it misses the on-time target for 25% of express shipments, and its worst-case cost on high-value cargo is 2.6 times higher ($17,583 vs $6,833).
+- For express cargo the advisor spends more on average ($7,813 vs $3,224 for cheapest) because it pays for reliability. Its worst case there is no better than cheapest's.
 - Treating every shipment the same way does worse. Play-safe for everyone raises the regret to $831, and expected cost for everyone to $452, so the per-profile settings matter.
 - Fixed weights did worst of all, even worse than always picking the safest route. Normalising cost, time and risk to 0-1 and adding them loses the information about how big the differences actually are.
 - The advisor minimises expected cost and regret is measured in cost, so the comparison favours it. That is why I also report reliability, worst case and CO2.
-- The Suez corridor wins for 5 shipments (low-value or urgent cargo). It loses for valuable cargo, where a disruption costs more than the 10 to 16 days it saves.
+- The Suez corridor wins for 5 shipments (low-value or urgent cargo). It loses for valuable cargo, where a disruption costs more than the time it saves (10 to 16 days from East Asia or India to northern Europe, 24 to 27 days from Mundra to Piraeus).
 
 ## Scenarios
 
 `python -m evaluation.scenarios` changes the conditions for all 30 shipments and re-runs every decision.
 
-| Scenario | Shipments re-routed | Forced (old route breaks a rule) | Only one valid route left | Avg cost before / after |
+| Scenario | Shipments re-routed | Forced (old route breaks a rule) | Only one valid route left | Avg cost before / after (each shipment's own measure) |
 |---|---|---|---|---|
-| Red Sea crisis | 3 | 3 | 6 | $4,597 / $4,837 |
-| Red Sea reopens | 2 | 0 | 4 | $4,597 / $3,948 |
-| Hub congestion | 3 | 2 | 5 | $4,597 / $5,061 |
-| Air freight price +80% | 0 | 0 | 5 | $4,597 / $6,102 |
+| Red Sea crisis | 3 | 3 | 6 | $4,598 / $4,838 |
+| Red Sea reopens | 2 | 0 | 4 | $4,598 / $3,948 |
+| Hub congestion spike | 3 | 2 | 5 | $4,598 / $5,061 |
+| Air capacity crunch (air freight +80%) | 0 | 0 | 5 | $4,598 / $6,102 |
 
 - A Red Sea crisis pushes the three express shipments that use Suez below their 90% on-time target, so they move to rail, air and sea + air.
 - If Red Sea risk returns to normal, S013 (express spare parts) moves from air to Suez and saves about $18,000.
@@ -147,8 +177,9 @@ What I take from this:
 - My first oracle ignored the on-time requirements. It could choose routes the policy doesn't allow, so the comparison was unfair. I changed it to follow the same rules as every strategy.
 - In the first dataset the deadlines were so tight that almost every sea route was rejected, so there was hardly a decision to make. I changed the deadlines to be based on the direct sea transit time.
 - When I added the map, it showed that leg distances didn't match geography: the generator split each route's distance between legs at random (Jebel Ali to Piraeus was 4,000 km instead of about 25,000 km around Africa), and some "Sea + rail" routes had rail legs crossing oceans. I rebuilt the generator so distances come from the sea-lane network and rail starts at real land-bridge hubs. This also removed the "Cape route" type, which became the same as Direct sea. I haven't tuned the data since then, so the results aren't adjusted in the advisor's favour.
-- The first cost chart in the dashboard was a box plot. It was unreadable because most simulated voyages cost exactly the freight, so I replaced it with median, average and worst-10% bars.
+- The first cost chart in the web app was a box plot. It was unreadable because most simulated voyages cost exactly the freight, so I replaced it with median, average and worst-10% bars.
 - In one version of the data the random draw produced no hazardous shipments, so the "no air for batteries" rule was tested but never used. The generator now makes sure there are at least two.
+- The "what would change it" search re-decides with 1,000 simulations to stay fast, but compared the result with the 5,000-simulation pick. On close calls (S009 and S021 in play-safe mode) the cheaper re-decision already disagreed at today's inputs, so it reported nonsense such as "with a deadline 0.0 days later". It now switches to the full simulation count when that happens, and never reports a change of zero. The same search said "None would win" when a shorter deadline left no valid route; it now says no route would pass the rules. Neither change affects any pick or evaluation number.
 - In the scenarios, some route changes first showed up as negative savings. These were switches forced by a broken rule, so I now count them separately.
 
 ## Assumptions

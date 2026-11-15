@@ -35,8 +35,8 @@ class TippingPoint:
     distance: float      # relative distance from today's value (for ranking: smaller = more fragile)
 
 
-def _winner(sh: Shipment, mode: str, **kw) -> Optional[str]:
-    rec = recommend(sh, mode=mode, n_sims=A.CONFIDENCE_SIMS, **kw)
+def _winner(sh: Shipment, mode: str, n_sims: int = A.CONFIDENCE_SIMS, **kw) -> Optional[str]:
+    rec = recommend(sh, mode=mode, n_sims=n_sims, **kw)
     return rec.chosen.route.route_id if rec.chosen else None
 
 
@@ -84,39 +84,52 @@ def find_tipping_points(rec: Recommendation) -> List[TippingPoint]:
     names = {r.route_id: r.name for r in sh.routes}
     out: List[TippingPoint] = []
 
+    # The scans re-decide with fewer simulations to stay fast. On a close call that cheaper
+    # re-decision can already disagree with the full decision at today's inputs, which would
+    # report a "tipping point" at zero change. Use the full simulation count in that case.
+    n = A.CONFIDENCE_SIMS if _winner(sh, mode) == base else A.N_SIMS
+
+    def _win(s: Shipment, m: str, **kw) -> Optional[str]:
+        r = recommend(s, mode=m, n_sims=n, **kw)
+        return r.chosen.route.route_id if r.chosen else None
+
+    def _label(rid: Optional[str]) -> str:
+        return names.get(rid, rid) if rid else "no route"
+
     # 1) late-day penalty
     pen = sh.delay_penalty_usd_per_day
     if pen > 0:
         for grid in (pen * np.geomspace(1, 10, 25), pen * np.geomspace(1, 0.1, 25)):
-            hit = _scan(grid, lambda v: _winner(sh, mode, penalty_per_day=v), base)
+            hit = _scan(grid, lambda v: _win(sh, mode, penalty_per_day=v), base)
             if hit:
                 t, new = hit
                 word = "rose above" if t > pen else "fell below"
-                out.append(TippingPoint("late-day penalty", pen, t, names.get(new, new),
+                out.append(TippingPoint("late-day penalty", pen, t, _label(new),
                                         f"If a late day cost the customer more than ${t:,.0f} instead of ${pen:,.0f}, "
-                                        f"{names.get(new, new)} would win." if t > pen else
+                                        f"{_label(new)} would win." if t > pen else
                                         f"If a late day cost less than ${t:,.0f} instead of ${pen:,.0f}, "
-                                        f"{names.get(new, new)} would win.", abs(np.log(t / pen))))
+                                        f"{_label(new)} would win.", abs(np.log(t / pen))))
 
     # 2) deadline
     d0 = sh.deadline_days
     for grid in (d0 + np.arange(0, 10.5, 0.5), d0 - np.arange(0, 10.5, 0.5)):
         grid = grid[grid > 0]
-        hit = _scan(grid, lambda v: _winner(replace(sh, deadline_days=float(v)), mode), base)
+        hit = _scan(grid, lambda v: _win(replace(sh, deadline_days=float(v)), mode), base)
         if hit:
             t, new = hit
             delta = t - d0
-            out.append(TippingPoint("deadline", d0, t, names.get(new, new),
+            out.append(TippingPoint("deadline", d0, t, _label(new),
                                     f"With a deadline {abs(delta):.1f} days {'later' if delta > 0 else 'earlier'} "
-                                    f"({t:.1f} days), {names.get(new, new)} would win.", abs(delta) / d0))
+                                    f"({t:.1f} days), " + (f"{_label(new)} would win." if new else
+                                                           "no route would pass the rules."), abs(delta) / d0))
 
     # 3) carbon price
     c0 = A.CARBON_PRICE_USD_PER_TONNE
-    hit = _scan(np.linspace(c0, 1000, 30), lambda v: _winner(sh, mode, carbon_price=v), base)
+    hit = _scan(np.linspace(c0, 1000, 30), lambda v: _win(sh, mode, carbon_price=v), base)
     if hit:
         t, new = hit
-        out.append(TippingPoint("carbon price", c0, t, names.get(new, new),
-                                f"At a carbon price above ${t:,.0f}/tonne (now ${c0:,.0f}), {names.get(new, new)} "
+        out.append(TippingPoint("carbon price", c0, t, _label(new),
+                                f"At a carbon price above ${t:,.0f}/tonne (now ${c0:,.0f}), {_label(new)} "
                                 f"would win.", abs(np.log(t / c0))))
 
     # 4) closest alternative becoming safer
@@ -126,27 +139,29 @@ def find_tipping_points(rec: Recommendation) -> List[TippingPoint]:
             continue
         route = e.route
         grid = np.linspace(1.0, 0.05, 20)
-        hit = _scan(grid, lambda f: _winner(_with_route(sh, _scale_risk(route, f)), mode), base)
+        hit = _scan(grid, lambda f: _win(_with_route(sh, _scale_risk(route, f)), mode), base)
         if hit and hit[1] == route.route_id and (best_alt is None or hit[0] > best_alt[1]):
             best_alt = (route, hit[0])
     if best_alt:
         route, f = best_alt
         p_now, p_new = _route_p_dis(route), _route_p_dis(_scale_risk(route, f))
+        detail = f" (disruption chance {p_now:.1%} -> {p_new:.1%})" if f"{p_now:.1%}" != f"{p_new:.1%}" else ""
         out.append(TippingPoint(f"{route.name} risk", 1.0, f, route.name,
-                                f"If {route.name}'s delay and disruption risk were {1 - f:.0%} lower "
-                                f"(disruption chance {p_now:.1%} -> {p_new:.1%}), it would become the pick.",
-                                1 - f))
+                                f"If {route.name}'s delay and disruption risk were {1 - f:.0%} lower"
+                                f"{detail}, it would become the pick.", 1 - f))
 
     # 5) chosen route being riskier than estimated
     chosen = rec.chosen.route
-    hit = _scan(np.linspace(1.0, 5.0, 25), lambda f: _winner(_with_route(sh, _scale_risk(chosen, f)), mode), base)
+    hit = _scan(np.linspace(1.0, 5.0, 25), lambda f: _win(_with_route(sh, _scale_risk(chosen, f)), mode), base)
     if hit:
         f, new = hit
-        out.append(TippingPoint(f"{chosen_name} risk", 1.0, f, names.get(new, new),
+        out.append(TippingPoint(f"{chosen_name} risk", 1.0, f, _label(new),
                                 f"If {chosen_name}'s risk is underestimated by more than {f - 1:.0%}, "
-                                f"{names.get(new, new)} would take over.", f - 1))
+                                f"{_label(new)} would take over.", f - 1))
     else:
         out.append(TippingPoint(f"{chosen_name} risk", 1.0, 5.0, chosen_name,
                                 f"{chosen_name} stays the pick even if its risk is 5x higher than estimated.", 4.0))
 
+    # a flip right at today's value is not a useful "what would change it" statement
+    out = [t for t in out if t.distance > 1e-6]
     return sorted(out, key=lambda t: t.distance)

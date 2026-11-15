@@ -34,3 +34,17 @@ def test_higher_late_penalty_tips_towards_faster_route(helpers):
     assert tips and tips[0].new_route == "Air" and tips[0].threshold > 1000
     # the threshold is real: just above it, the decision really flips
     assert recommend(s, n_sims=1000, penalty_per_day=tips[0].threshold * 1.05).chosen.route.name == "Air"
+
+
+def test_tipping_sentences_are_meaningful_for_every_shipment():
+    """No tipping point at today's value, and every sentence names a real outcome."""
+    from engine.dataset import load_shipments
+    from engine.optimizer import recommend
+    from engine.tipping import find_tipping_points
+
+    for s in load_shipments().values():
+        for mode in ("expected", "play_safe"):
+            for t in find_tipping_points(recommend(s, mode=mode)):
+                assert t.distance > 0, (s.shipment_id, mode, t.sentence)
+                assert "None" not in t.sentence, (s.shipment_id, mode, t.sentence)
+                assert " 0.0 days" not in t.sentence and "were 0% lower" not in t.sentence, t.sentence

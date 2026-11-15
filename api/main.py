@@ -16,19 +16,23 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+from config import assumptions as A  # noqa: E402
 from config.assumptions import assumptions_table  # noqa: E402
 from engine.analysis import analyze  # noqa: E402
 from engine.dataset import build_shipments, load_tables  # noqa: E402
 from engine.models import Shipment  # noqa: E402
-from evaluation.scenarios import SCENARIOS, run_scenario  # noqa: E402
-from geography import route_passages, route_path  # noqa: E402
+from evaluation.scenarios import EVENT_INFO, SCENARIOS, run_scenario  # noqa: E402
+from geography import PORTS, route_passages, route_path  # noqa: E402
 from services.explanation_service import explain  # noqa: E402
+from services.shipment_input import ShipmentIn  # noqa: E402
 
 app = FastAPI(title="Shipment Route Advisor API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    # comma-separated list; set ALLOWED_ORIGINS when the web app runs on another host or port
+    allow_origins=[o.strip() for o in os.environ.get(
+        "ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",") if o.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -102,6 +106,27 @@ def _shipment_analysis(
         with_conf = False
         with_tips = False
 
+    return _analysis_response(s, mode, carbon, with_conf, with_tips, penalty, min_on_time, **overrides)
+
+
+def _geometry(r) -> Tuple[list, list, list]:
+    """Map data for a route. Ports outside geography.PORTS (custom shipments) give empty lists."""
+    hubs = [r.legs[0].from_hub] + [l.to_hub for l in r.legs]
+    if not all(h in PORTS for h in hubs):
+        return [], [], []
+    coords = [[float(lat), float(lon)] for lat, lon in route_path(r.legs)]
+    try:
+        passages = route_passages(r.legs)
+    except KeyError:
+        passages = []
+    return coords, passages, [[float(PORTS[h][0]), float(PORTS[h][1])] for h in hubs]
+
+
+def _analysis_response(s: Shipment, mode: Optional[str], carbon: Optional[float], with_conf: bool,
+                       with_tips: bool, penalty: Optional[float] = None, min_on_time: Optional[float] = None,
+                       **overrides) -> dict:
+    """Run the decision pipeline (analyze + explain) and build the API response.
+    Shared by GET /api/shipments/{id} and POST /api/recommend."""
     an = analyze(
         s,
         mode=mode,
@@ -140,8 +165,7 @@ def _shipment_analysis(
                     "counts": [int(x) for x in counts],
                 }
 
-        pts = route_path(r.legs)
-        coords = [[float(lat), float(lon)] for lat, lon in pts]
+        coords, passages, stop_coords = _geometry(r)
 
         route_list.append({
             "id": r.route_id,
@@ -153,7 +177,8 @@ def _shipment_analysis(
             "planned_days": float(r.planned_days),
             "metrics": metrics_dict,
             "coords": coords,
-            "passages": route_passages(r.legs),
+            "passages": passages,
+            "stop_coords": stop_coords,
             "arrival_histogram": hist_dict,
         })
 
@@ -196,6 +221,8 @@ def _shipment_analysis(
         },
         "mode": rec.mode,
         "recommended_route_id": rec.chosen.route.route_id if rec.chosen else None,
+        "runner_up_id": rec.runner_up.route.route_id if rec.runner_up else None,
+        "settings": _settings(carbon),
         "warnings": list(rec.warnings),
         "routes": route_list,
         "confidence": conf_dict,
@@ -205,6 +232,28 @@ def _shipment_analysis(
             "source": exp.source,
         },
     }
+
+
+def _settings(carbon: Optional[float] = None) -> dict:
+    """Model settings the web app shows in its text, so no number is hard-coded there."""
+    return {
+        "n_sims": A.N_SIMS,
+        "confidence_runs": A.CONFIDENCE_RUNS,
+        "estimate_noise": A.OBSERVATION_NOISE,
+        "worst_share": round(1 - A.CVAR_ALPHA, 4),
+        "default_carbon_price": A.CARBON_PRICE_USD_PER_TONNE,
+        "carbon_price": float(carbon) if carbon is not None else A.CARBON_PRICE_USD_PER_TONNE,
+    }
+
+
+@app.get("/api/settings")
+def get_settings():
+    return _settings()
+
+
+@app.get("/api/events")
+def get_events():
+    return [{"id": name, **EVENT_INFO[name]} for name in SCENARIOS]
 
 
 @app.get("/api/shipments")
@@ -237,6 +286,22 @@ def get_shipment(
         event_tuple = tuple(event_names)
 
     return _shipment_analysis(id, mode, event_tuple, penalty, deadline_shift, carbon, min_on_time)
+
+
+@app.post("/api/recommend")
+def recommend_custom(
+    shipment: ShipmentIn,
+    mode: Optional[str] = Query(None, description="Decision mode: expected | play_safe"),
+):
+    """Recommend a route for a shipment that is not in the dataset.
+
+    Runs exactly the same pipeline as GET /api/shipments/{id} (analyze + explain, with the
+    confidence check and tipping points) and returns the same response shape. Ports that
+    the map does not know give empty coords, passages and stop_coords.
+    """
+    if mode is not None and mode not in ("expected", "play_safe"):
+        raise HTTPException(status_code=422, detail=f"Invalid mode '{mode}'. Must be 'expected' or 'play_safe'.")
+    return _analysis_response(shipment.to_shipment(), mode, None, True, True)
 
 
 @functools.lru_cache(maxsize=4)

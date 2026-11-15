@@ -57,6 +57,7 @@ export interface RouteItem {
   metrics: RouteMetrics | null;
   coords: [number, number][];
   passages: string[];
+  stop_coords: [number, number][];
   arrival_histogram: ArrivalHistogram | null;
 }
 
@@ -73,6 +74,21 @@ export interface TippingPoint {
   new_route: string;
 }
 
+export interface ModelSettings {
+  n_sims: number;
+  confidence_runs: number;
+  estimate_noise: number;
+  worst_share: number;
+  default_carbon_price: number;
+  carbon_price: number;
+}
+
+export interface WorldEvent {
+  id: string;
+  title: string;
+  description: string;
+}
+
 export interface ExplanationData {
   text: string;
   source: string;
@@ -82,6 +98,8 @@ export interface ShipmentDetail {
   shipment: ShipmentMeta;
   mode: string;
   recommended_route_id: string | null;
+  runner_up_id: string | null;
+  settings: ModelSettings;
   warnings: string[];
   routes: RouteItem[];
   confidence: ConfidenceData | null;

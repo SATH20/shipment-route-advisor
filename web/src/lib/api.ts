@@ -4,6 +4,8 @@ import {
   ScenarioResult,
   ShipmentDetail,
   ShipmentSummary,
+  ModelSettings,
+  WorldEvent,
 } from "./types";
 
 const API_BASE_URL =
@@ -17,6 +19,8 @@ export class ApiError extends Error {
     this.status = status;
   }
 }
+
+export const API_URL = API_BASE_URL;
 
 async function request<T>(endpoint: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -43,13 +47,11 @@ async function request<T>(endpoint: string, init?: RequestInit): Promise<T> {
     }
 
     return (await res.json()) as T;
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof ApiError) {
       throw err;
     }
-    throw new ApiError(
-      `Cannot reach the advisor backend at ${API_BASE_URL}. Please start the API server: uvicorn api.main:app --port 8000`
-    );
+    throw new ApiError(`The route engine at ${API_BASE_URL} is not answering.`);
   }
 }
 
@@ -101,4 +103,12 @@ export async function fetchScenario(name: string): Promise<ScenarioResult> {
 
 export async function fetchAssumptions(): Promise<Assumption[]> {
   return request<Assumption[]>("/api/assumptions");
+}
+
+export async function fetchEvents(): Promise<WorldEvent[]> {
+  return request<WorldEvent[]>("/api/events");
+}
+
+export async function fetchSettings(): Promise<ModelSettings> {
+  return request<ModelSettings>("/api/settings");
 }

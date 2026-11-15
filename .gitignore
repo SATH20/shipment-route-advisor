@@ -13,11 +13,16 @@ ENV/
 
 # Environment variables
 .env
+.env.local
 .env*.local
+web/.env
+web/.env.local
 
 # Node & Next.js
 node_modules/
+web/node_modules/
 .next/
+web/.next/
 out/
 build/
 dist/

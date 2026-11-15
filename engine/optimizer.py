@@ -5,6 +5,7 @@
 Every route ends with a status and a reason, so the explanation layer never has to guess.
 
 CLI:  python -m engine.optimizer S001 [--mode expected|play_safe]
+      python -m engine.optimizer --file examples/custom_shipment.json
 """
 from __future__ import annotations
 
@@ -117,6 +118,7 @@ def recommend(shipment: Shipment, mode: Optional[str] = None, n_sims: int = A.N_
 # ---------------------------------------------------------------------------- CLI
 def format_recommendation(rec: Recommendation) -> str:
     s = rec.shipment
+    w = max(9, max(len(e.route.route_id) for e in rec.evaluations) + 2)  # route id column
     lines = [
         f"Shipment {s.shipment_id}: {s.origin} -> {s.destination} | {s.cargo_type} ({s.profile}) | "
         f"value ${s.cargo_value_usd:,.0f} | deadline {s.deadline_days:g} d | late day ${s.delay_penalty_usd_per_day:,.0f}",
@@ -124,21 +126,21 @@ def format_recommendation(rec: Recommendation) -> str:
         + (f" | avoid {', '.join(s.avoid_regions)}" if s.avoid_regions else "")
         + (" | HAZARDOUS" if s.hazardous else ""),
         "",
-        f"{'Route':<9}{'Type':<15}{'Status':<19}{'Freight':>9}{'Days':>7}{'On-time':>9}{'Disrupt':>9}"
+        f"{'Route':<{w}}{'Type':<15}{'Status':<19}{'Freight':>9}{'Days':>7}{'On-time':>9}{'Disrupt':>9}"
         f"{'CO2 t':>7}{'Exp. cost':>11}{'Worst10%':>11}",
     ]
     order = {RECOMMENDED: 0, CANDIDATE: 1, DOMINATED: 2, UNRELIABLE: 3, NOT_ALLOWED: 4}
     for e in sorted(rec.evaluations, key=lambda e: (order[e.status], e.score or 0)):
         m = e.metrics
         if m:
-            lines.append(f"{e.route.route_id:<9}{e.route.name:<15}{e.status:<19}{m.freight_usd:>9,.0f}"
+            lines.append(f"{e.route.route_id:<{w}}{e.route.name:<15}{e.status:<19}{m.freight_usd:>9,.0f}"
                          f"{m.mean_days:>7.1f}{m.p_on_time:>9.0%}{m.p_disruption:>9.1%}{m.co2_tonnes:>7.2f}"
                          f"{m.exp_total:>11,.0f}{m.cvar_total:>11,.0f}")
         else:
-            lines.append(f"{e.route.route_id:<9}{e.route.name:<15}{e.status:<19}{e.route.freight_usd:>9,.0f}"
+            lines.append(f"{e.route.route_id:<{w}}{e.route.name:<15}{e.status:<19}{e.route.freight_usd:>9,.0f}"
                          f"{e.route.planned_days:>7.1f}")
         for reason in e.reasons:
-            lines.append(f"{'':<9}  - {reason}")
+            lines.append(f"{'':<{w}}  - {reason}")
     lines.append("")
     if rec.chosen:
         lines.append(f"Recommended: {rec.chosen.route.route_id} {rec.chosen.route.name} ({rec.chosen.route.path})")
@@ -150,12 +152,21 @@ def format_recommendation(rec: Recommendation) -> str:
 def main():
     from .dataset import load_shipments
     ap = argparse.ArgumentParser(description="Recommend a route for one shipment")
-    ap.add_argument("shipment_id")
+    src = ap.add_mutually_exclusive_group(required=True)
+    src.add_argument("shipment_id", nargs="?", help="a shipment id from data/, e.g. S020")
+    src.add_argument("--file", help="a shipment described in JSON, e.g. examples/custom_shipment.json")
     ap.add_argument("--mode", choices=["expected", "play_safe"], default=None,
                     help="override the profile's risk mode")
     args = ap.parse_args()
-    ships = load_shipments()
-    print(format_recommendation(recommend(ships[args.shipment_id], mode=args.mode)))
+    if args.file:
+        from services.shipment_input import load_shipment_file  # validation only, no decision logic
+        shipment = load_shipment_file(args.file)
+    else:
+        ships = load_shipments()
+        if args.shipment_id not in ships:
+            ap.error(f"unknown shipment id {args.shipment_id}")
+        shipment = ships[args.shipment_id]
+    print(format_recommendation(recommend(shipment, mode=args.mode)))
 
 
 if __name__ == "__main__":

@@ -1,313 +1,267 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { fetchShipment, fetchShipments } from "@/lib/api";
-import { ShipmentDetail, ShipmentSummary } from "@/lib/types";
+import { fetchEvents, fetchShipment, fetchShipments, FetchShipmentOptions } from "@/lib/api";
+import { ShipmentDetail, ShipmentSummary, WorldEvent } from "@/lib/types";
+import { formatCount, oneIn } from "@/lib/words";
 import RouteCard from "@/components/RouteCard";
 import RouteMap from "@/components/RouteMap";
 import ShipmentHeader from "@/components/ShipmentHeader";
 import RecommendationPanel from "@/components/RecommendationPanel";
 import WhatIfScenarios, { ScenarioState } from "@/components/WhatIfScenarios";
 import TripsHistogram from "@/components/TripsHistogram";
+import { ErrorBox, SectionsSkeleton } from "@/components/PageSkeletons";
+
+const DEFAULT_SHIPMENT = "S020";
+
+function defaultsFrom(base: ShipmentDetail): ScenarioState {
+  return {
+    activeEvents: [],
+    penalty: base.shipment.penalty_per_day,
+    deadlineShift: 0,
+    carbonPrice: base.settings.default_carbon_price,
+  };
+}
+
+/** Only the inputs the user actually changed are sent, so the API keeps the full double-check. */
+function changesFrom(state: ScenarioState, base: ShipmentDetail): FetchShipmentOptions {
+  const d = defaultsFrom(base);
+  const out: FetchShipmentOptions = {};
+  if (state.activeEvents.length > 0) out.events = state.activeEvents.join(",");
+  if (state.penalty !== d.penalty) out.penalty = state.penalty;
+  if (state.deadlineShift !== 0) out.deadline_shift = state.deadlineShift;
+  if (state.carbonPrice !== d.carbonPrice) out.carbon = state.carbonPrice;
+  return out;
+}
 
 export default function PlanShipmentPage() {
   const [shipmentsList, setShipmentsList] = useState<ShipmentSummary[]>([]);
-  const [selectedId, setSelectedId] = useState<string>("S020");
+  const [events, setEvents] = useState<WorldEvent[]>([]);
+  const [selectedId, setSelectedId] = useState<string>(DEFAULT_SHIPMENT);
 
+  // base = this shipment in the chosen mode with no changes; current = with the user's changes
   const [baseDetail, setBaseDetail] = useState<ShipmentDetail | null>(null);
   const [currentDetail, setCurrentDetail] = useState<ShipmentDetail | null>(null);
+  const [mode, setMode] = useState<string | null>(null);
+  const [scenario, setScenario] = useState<ScenarioState | null>(null);
 
-  const [mode, setMode] = useState<string>("play_safe");
-  const [scenarioState, setScenarioState] = useState<ScenarioState>({
-    activeEvents: [],
-    penalty: 6380,
-    deadlineShift: 0,
-    carbonPrice: 90,
-  });
+  const [pending, setPending] = useState<boolean>(true);
+  const [fatalError, setFatalError] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const requestId = useRef(0);
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load all shipments on mount
-  useEffect(() => {
-    fetchShipments()
-      .then((data) => {
-        setShipmentsList(data);
-      })
-      .catch((err) => {
-        setError(err.message || "Failed to load shipments list");
-      });
-  }, []);
-
-  // When selectedId changes, load base detail and reset scenario inputs
-  useEffect(() => {
-    if (!selectedId) return;
-
-    setLoading(true);
-    fetchShipment(selectedId)
-      .then((detail) => {
-        setBaseDetail(detail);
-        setCurrentDetail(detail);
-        setMode(detail.shipment.risk_mode);
-        setScenarioState({
-          activeEvents: [],
-          penalty: detail.shipment.penalty_per_day,
-          deadlineShift: 0,
-          carbonPrice: 90,
-        });
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message || "Failed to load shipment details");
-        setLoading(false);
-      });
-  }, [selectedId]);
-
-  // Debounced refetch whenever mode or scenario parameters change
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  const applyChanges = useCallback(
-    (
-      targetMode: string,
-      targetState: ScenarioState
-    ) => {
-      if (!selectedId) return;
-
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-
-      debounceTimerRef.current = setTimeout(() => {
-        const eventsStr =
-          targetState.activeEvents.length > 0
-            ? targetState.activeEvents.join(",")
-            : undefined;
-
-        fetchShipment(selectedId, {
-          mode: targetMode,
-          events: eventsStr,
-          penalty: targetState.penalty,
-          deadline_shift: targetState.deadlineShift,
-          carbon: targetState.carbonPrice,
+  const load = useCallback(
+    (id: string, targetMode: string | null, state: ScenarioState | null, base: ShipmentDetail | null) => {
+      const myId = ++requestId.current;
+      setPending(true);
+      setRefreshError(null);
+      const modeOpt = targetMode ? { mode: targetMode } : {};
+      const basePromise =
+        base && base.shipment.id === id && base.mode === targetMode
+          ? Promise.resolve(base)
+          : fetchShipment(id, modeOpt);
+      basePromise
+        .then((b) => {
+          const changes = state ? changesFrom(state, b) : {};
+          const current =
+            Object.keys(changes).length > 0
+              ? fetchShipment(id, { ...modeOpt, ...changes })
+              : Promise.resolve(b);
+          return Promise.all([b, current]);
         })
-          .then((updated) => {
-            setCurrentDetail(updated);
-          })
-          .catch((err) => {
-            console.error("Refetch error:", err);
-          });
-      }, 300);
+        .then(([b, cur]) => {
+          if (myId !== requestId.current) return; // a newer request has started
+          setBaseDetail(b);
+          setCurrentDetail(cur);
+          setMode(b.mode);
+          if (!state) setScenario(defaultsFrom(b));
+          setPending(false);
+        })
+        .catch((err: Error) => {
+          if (myId !== requestId.current) return;
+          setPending(false);
+          if (!base) setFatalError(err.message);
+          else setRefreshError(err.message);
+        });
     },
-    [selectedId]
+    []
   );
 
+  const loadLists = useCallback(() => {
+    Promise.all([fetchShipments(), fetchEvents()])
+      .then(([list, ev]) => {
+        setShipmentsList(list);
+        setEvents(ev);
+      })
+      .catch((err: Error) => setFatalError(err.message));
+  }, []);
+
+  useEffect(() => {
+    loadLists();
+  }, [loadLists]);
+
+  // A new shipment starts from its own default mode and no changes.
+  useEffect(() => {
+    if (debounce.current) clearTimeout(debounce.current);
+    load(selectedId, null, null, null);
+  }, [selectedId, load]);
+
   const handleModeChange = (newMode: string) => {
+    if (newMode === mode) return;
     setMode(newMode);
-    applyChanges(newMode, scenarioState);
+    load(selectedId, newMode, scenario, baseDetail);
   };
 
-  const handleScenarioChange = (newState: ScenarioState) => {
-    setScenarioState(newState);
-    applyChanges(mode, newState);
+  const handleScenarioChange = (next: ScenarioState) => {
+    setScenario(next);
+    if (debounce.current) clearTimeout(debounce.current);
+    debounce.current = setTimeout(() => load(selectedId, mode, next, baseDetail), 300);
   };
 
   const handleReset = () => {
     if (!baseDetail) return;
-    const defaultState: ScenarioState = {
-      activeEvents: [],
-      penalty: baseDetail.shipment.penalty_per_day,
-      deadlineShift: 0,
-      carbonPrice: 90,
-    };
-    setScenarioState(defaultState);
-    applyChanges(mode, defaultState);
+    if (debounce.current) clearTimeout(debounce.current);
+    const d = defaultsFrom(baseDetail);
+    setScenario(d);
+    load(selectedId, mode, d, baseDetail);
   };
 
-  // Scroll animations with IntersectionObserver
-  useEffect(() => {
-    if (typeof window === "undefined" || !("IntersectionObserver" in window))
-      return;
+  const retry = () => {
+    setFatalError(null);
+    loadLists();
+    load(selectedId, null, null, null);
+  };
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("rise");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    const elements = document.querySelectorAll(".scroll-rise");
-    elements.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, [currentDetail]);
-
-  if (loading && !currentDetail) {
-    return (
-      <div className="py-24 text-center">
-        <div className="inline-block w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-muted font-medium">
-          Loading shipment details and running simulations...
-        </p>
-      </div>
-    );
+  if (fatalError && !currentDetail) {
+    return <ErrorBox message={fatalError} onRetry={retry} />;
   }
 
-  if (error && !currentDetail) {
-    return (
-      <div className="p-8 bg-red-50 border border-bad/30 rounded-3xl text-bad">
-        <h2 className="text-xl font-bold mb-2">Connection Problem</h2>
-        <p className="text-sm">{error}</p>
-      </div>
-    );
-  }
-
-  if (!currentDetail) return null;
-
-  const { shipment, routes, recommended_route_id, confidence, tipping, warnings } =
-    currentDetail;
-
-  const recommendedRoute =
-    routes.find((r) => r.id === recommended_route_id) || null;
+  // Never show another shipment's numbers while the chosen one loads.
+  const ready =
+    currentDetail && baseDetail && scenario && currentDetail.shipment.id === selectedId;
 
   return (
-    <div className="space-y-12">
-      {/* Hero Section */}
-      <section className="scroll-rise flex flex-wrap gap-8 items-end justify-between">
+    <div className="space-y-10">
+      <section className="rise flex flex-wrap gap-8 items-end justify-between">
         <div className="flex-[1_1_520px] min-w-0">
           <p className="text-sm font-semibold tracking-wider uppercase text-accent mb-2">
             Step by step
           </p>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-ink leading-tight">
-            Which way should this
-            <br />
-            shipment travel?
+            Which way should this shipment travel?
           </h1>
           <p className="mt-4 text-base md:text-lg text-muted max-w-2xl leading-relaxed">
-            There are a few ways to send a package across the world. Some are
-            cheap, some are fast, some go through dangerous waters. We test every
-            way 5,000 times and pick the one that makes the most sense for this
-            cargo.
+            A shipment can travel in a few ways. Some are cheap, some are fast,
+            and some pass through dangerous waters. We try each way
+            {ready ? ` ${formatCount(currentDetail.settings.n_sims)} times` : " many times"} on
+            the computer and pick the one that makes the most sense for this cargo.
           </p>
         </div>
 
-        {/* Step Index Box */}
-        <ol className="flex-[0_1_420px] list-none m-0 p-0 grid grid-cols-2 gap-2.5">
-          <li className="bg-card border border-line rounded-2xl p-3.5">
-            <span className="block text-xs text-subtle font-bold mb-0.5">1</span>
-            <span className="font-semibold text-sm text-ink">The shipment</span>
-          </li>
-          <li className="bg-card border border-line rounded-2xl p-3.5">
-            <span className="block text-xs text-subtle font-bold mb-0.5">2</span>
-            <span className="font-semibold text-sm text-ink">The ways to send it</span>
-          </li>
-          <li className="bg-card border border-line rounded-2xl p-3.5">
-            <span className="block text-xs text-subtle font-bold mb-0.5">3</span>
-            <span className="font-semibold text-sm text-ink">Our pick, and why</span>
-          </li>
-          <li className="bg-card border border-line rounded-2xl p-3.5">
-            <span className="block text-xs text-subtle font-bold mb-0.5">4</span>
-            <span className="font-semibold text-sm text-ink">Try it yourself</span>
-          </li>
+        <ol className="flex-[0_1_420px] list-none m-0 p-0 grid grid-cols-2 gap-3" aria-label="Steps on this page">
+          {["The shipment", "The ways to send it", "Our pick, and why", "Try it yourself"].map(
+            (label, i) => (
+              <li key={label} className="bg-card border border-line rounded-2xl p-4">
+                <span className="block text-xs text-subtle font-bold mb-1">{i + 1}</span>
+                <span className="font-semibold text-sm text-ink">{label}</span>
+              </li>
+            )
+          )}
         </ol>
       </section>
 
-      {/* Section 1: The shipment */}
-      <div className="scroll-rise">
-        <ShipmentHeader
-          shipments={shipmentsList}
-          selectedId={selectedId}
-          onSelectShipment={setSelectedId}
-          shipment={shipment}
-        />
-      </div>
+      <ShipmentHeader
+        shipments={shipmentsList}
+        selectedId={selectedId}
+        onSelectShipment={setSelectedId}
+        shipment={ready ? currentDetail.shipment : null}
+        changed={ready ? Object.keys(changesFrom(scenario, baseDetail)).length > 0 : false}
+      />
 
-      {/* Section 2: {n} ways to send it */}
-      <section className="scroll-rise bg-card border border-line rounded-3xl p-7 md:p-9 shadow-sm">
-        <div className="flex items-center gap-2.5 mb-2">
-          <span className="w-7 h-7 rounded-full bg-ink text-white font-bold text-xs flex items-center justify-center">
-            2
-          </span>
-          <h2 className="text-xl md:text-2xl font-bold text-ink m-0">
-            {routes.length} ways to send it
-          </h2>
+      <p className="sr-only" role="status" aria-live="polite">
+        {pending ? "Updating the numbers" : ready ? "Numbers updated" : ""}
+      </p>
+
+      {refreshError && (
+        <div role="alert" className="rounded-2xl border border-bad/40 bg-[#fff3f1] px-5 py-4 text-sm text-bad">
+          We could not update the numbers: {refreshError} The numbers below are from before your last change.
         </div>
-        <p className="text-sm md:text-base text-muted mb-7">
-          Each line is one way to go. The thick line is our pick.
-        </p>
+      )}
 
-        {/* Route Map & Legend */}
-        <RouteMap
-          routes={routes}
-          recommendedId={recommended_route_id}
-          origin={shipment.origin}
-          destination={shipment.destination}
-        />
+      {!ready ? (
+        <SectionsSkeleton />
+      ) : (
+        <div
+          aria-busy={pending}
+          className={`space-y-10 transition-opacity duration-200 ${pending ? "opacity-60" : "opacity-100"}`}
+        >
+          <section className="bg-card border border-line rounded-3xl p-6 md:p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="w-7 h-7 rounded-full bg-ink text-white font-bold text-xs flex items-center justify-center" aria-hidden="true">
+                2
+              </span>
+              <h2 className="text-xl md:text-2xl font-bold text-ink m-0">
+                {currentDetail.routes.length} ways to send it
+              </h2>
+            </div>
+            <p className="text-sm md:text-base text-muted mb-6">
+              Each line on the map is one way to go. The thick line is our pick.
+            </p>
 
-        {/* Route Cards Grid */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {routes.map((r) => (
-            <RouteCard
-              key={r.id}
-              route={r}
-              allRoutes={routes}
-              isRecommended={r.id === recommended_route_id}
-              deadlineDays={shipment.deadline_days}
+            <RouteMap
+              routes={currentDetail.routes}
+              recommendedId={currentDetail.recommended_route_id}
+              origin={currentDetail.shipment.origin}
+              destination={currentDetail.shipment.destination}
             />
-          ))}
+
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {currentDetail.routes.map((r) => (
+                <RouteCard
+                  key={r.id}
+                  route={r}
+                  allRoutes={currentDetail.routes}
+                  isRecommended={r.id === currentDetail.recommended_route_id}
+                  deadlineDays={currentDetail.shipment.deadline_days}
+                />
+              ))}
+            </div>
+
+            <p className="mt-6 text-xs text-subtle leading-relaxed border-t border-line pt-4">
+              <strong className="text-muted">Usual total cost</strong> is the ticket, plus late
+              fees, plus money lost when something goes wrong, plus a price on pollution. It is the
+              average over {formatCount(currentDetail.settings.n_sims)} tries on the computer.{" "}
+              <strong className="text-muted">Bad-luck cost</strong> is the average of the worst{" "}
+              {oneIn(currentDetail.settings.worst_share)} of those tries.
+            </p>
+          </section>
+
+          <RecommendationPanel
+            detail={currentDetail}
+            mode={mode ?? currentDetail.mode}
+            onChangeMode={handleModeChange}
+            hasChanges={Object.keys(changesFrom(scenario, baseDetail)).length > 0}
+          />
+
+          <WhatIfScenarios
+            events={events}
+            base={baseDetail}
+            current={currentDetail}
+            scenarioState={scenario}
+            onChangeScenario={handleScenarioChange}
+            onReset={handleReset}
+            hasChanges={Object.keys(changesFrom(scenario, baseDetail)).length > 0}
+          />
+
+          <TripsHistogram
+            routes={currentDetail.routes}
+            deadlineDays={currentDetail.shipment.deadline_days}
+            nSims={currentDetail.settings.n_sims}
+          />
         </div>
-
-        {/* Metric definitions */}
-        <p className="mt-6 text-xs text-subtle leading-relaxed border-t border-line/60 pt-4">
-          <strong className="text-muted">Usual total cost</strong> = ticket +
-          late fees + losses from trouble + a price on pollution, averaged over
-          5,000 imagined trips.{" "}
-          <strong className="text-muted">Bad-luck cost</strong> = the average of
-          the worst 1 in 10 of those trips.
-        </p>
-      </section>
-
-      {/* Section 3: Our pick, and why */}
-      <div className="scroll-rise">
-        <RecommendationPanel
-          recommendedRoute={recommendedRoute}
-          routes={routes}
-          mode={mode}
-          onChangeMode={handleModeChange}
-          confidence={confidence}
-          tipping={tipping}
-          warnings={warnings}
-          cargoValue={shipment.value_usd}
-          deadlineDays={shipment.deadline_days}
-          minOnTime={shipment.min_on_time}
-        />
-      </div>
-
-      {/* Section 4: Try it yourself */}
-      <div className="scroll-rise">
-        <WhatIfScenarios
-          basePickName={baseDetail?.recommended_route_id ? baseDetail.routes.find(r => r.id === baseDetail.recommended_route_id)?.name ?? null : null}
-          currentPickName={recommendedRoute ? recommendedRoute.name : null}
-          scenarioState={scenarioState}
-          onChangeScenario={handleScenarioChange}
-          onReset={handleReset}
-          defaultPenalty={shipment.penalty_per_day}
-          routes={routes}
-          minOnTime={shipment.min_on_time}
-        />
-      </div>
-
-      {/* Collapsible: 5,000 imagined trips histogram */}
-      <div className="scroll-rise">
-        <TripsHistogram
-          routes={routes}
-          deadlineDays={shipment.deadline_days}
-        />
-      </div>
+      )}
     </div>
   );
 }

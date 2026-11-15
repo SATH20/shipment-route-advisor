@@ -21,7 +21,7 @@ from typing import Callable, Dict, List, Optional
 
 from config import assumptions as A
 from engine.analysis import Analysis
-from engine.optimizer import RECOMMENDED
+from engine.optimizer import DOMINATED, RECOMMENDED
 from engine.scoring import breakdown
 from .validation_service import validate
 
@@ -98,11 +98,15 @@ def _driver(an: Analysis) -> str:
     ch, ru = rec.chosen, rec.runner_up
     c = ch.metrics
     if ru is None:
-        return f"It is the only route that passes every rule for this shipment."
+        if any(e.status == DOMINATED for e in rec.evaluations):
+            return ("Every other route breaks a rule or is no better on any measure, "
+                    "so it is the only real option for this shipment.")
+        return "It is the only route that passes every rule for this shipment."
     r = ru.metrics
     if rec.mode == "play_safe" and c.exp_total > r.exp_total:
+        much = "much " if r.cvar_total >= 1.25 * c.cvar_total else ""
         return (f"Its average cost is higher ({_money(c.exp_total)} vs {_money(r.exp_total)} for {ru.route.name}), "
-                f"but its worst case is much better ({_money(c.cvar_total)} vs {_money(r.cvar_total)}). "
+                f"but its worst case is {much}better ({_money(c.cvar_total)} vs {_money(r.cvar_total)}). "
                 f"For {rec.shipment.profile.replace('_', '-')} cargo we protect against the bad outcomes.")
     bc, br = breakdown(c).as_dict(), breakdown(r).as_dict()
     savings = {k: br[k] - bc[k] for k in bc}

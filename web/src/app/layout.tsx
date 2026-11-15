@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import NavLinks from "@/components/NavLinks";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,8 +17,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Route Advisor - Plan a Shipment",
-  description: "Find the best route for every package, balancing cost, time, and safety.",
+  title: "Route Advisor",
+  description: "Pick a route for each shipment, balancing price, time and risk.",
 };
 
 export default function RootLayout({
@@ -28,11 +29,17 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
       <body className="min-h-screen bg-paper text-ink font-sans flex flex-col antialiased">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-card focus:text-ink focus:px-4 focus:py-3 focus:rounded-xl focus:shadow-md"
+        >
+          Skip to the main content
+        </a>
         <header className="bg-card border-b border-line sticky top-0 z-40">
-          <div className="max-w-[1200px] mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-3">
             <Link
               href="/"
-              className="flex items-center gap-2.5 text-ink no-underline group"
+              className="flex items-center gap-2.5 text-ink no-underline group min-h-[44px]"
               aria-label="Route Advisor Home"
             >
               <div className="w-9 h-9 rounded-[10px] bg-ink flex items-center justify-center transition-transform group-hover:scale-105">
@@ -57,39 +64,20 @@ export default function RootLayout({
               </span>
             </Link>
 
-            <nav className="flex flex-wrap gap-1.5" aria-label="Main">
-              <Link
-                href="/"
-                className="text-ink font-semibold text-[15px] px-3.5 py-2 rounded-full hover:bg-ocean transition-colors min-h-[44px] flex items-center"
-              >
-                Plan a shipment
-              </Link>
-              <Link
-                href="/how"
-                className="text-muted font-medium text-[15px] px-3.5 py-2 rounded-full hover:bg-ocean hover:text-ink transition-colors min-h-[44px] flex items-center"
-              >
-                How it decides
-              </Link>
-              <Link
-                href="/results"
-                className="text-muted font-medium text-[15px] px-3.5 py-2 rounded-full hover:bg-ocean hover:text-ink transition-colors min-h-[44px] flex items-center"
-              >
-                Does it work?
-              </Link>
-            </nav>
+            <NavLinks />
           </div>
         </header>
 
-        <main className="flex-1 max-w-[1200px] w-full mx-auto px-6 py-10">
+        <main id="main" className="flex-1 max-w-[1200px] w-full mx-auto px-4 sm:px-6 py-8 sm:py-10">
           {children}
         </main>
 
-        <footer className="max-w-[1200px] w-full mx-auto px-6 py-8 pb-14 border-t border-line mt-auto flex flex-wrap justify-between gap-3 text-[13px] text-subtle">
+        <footer className="max-w-[1200px] w-full mx-auto px-4 sm:px-6 py-8 pb-14 border-t border-line mt-auto flex flex-wrap justify-between gap-3 text-xs sm:text-[13px] text-muted">
           <span>
-            Made-up shipments on real trade lanes. Ports and distances are real; prices and risks are estimates.
+            The shipments are made up, but the ports and distances are real. Prices and risks are estimates.
           </span>
           <span>
-            An optional AI writes the explanations. It never chooses the route.
+            The route is always chosen by the numbers, never by an AI.
           </span>
         </footer>
       </body>
