@@ -1,5 +1,5 @@
 Noise,Strategy,Avg regret vs oracle ($),Matches oracle,Meets on-time target
-0%,Always cheapest,1299,76%,93%
+0%,Always cheapest,1297,76%,93%
 0%,Always fastest,5714,30%,100%
 0%,Always safest,4224,43%,100%
 0%,Fixed weights,6442,43%,100%
@@ -7,7 +7,7 @@ Noise,Strategy,Avg regret vs oracle ($),Matches oracle,Meets on-time target
 0%,Advisor (expected cost only),441,89%,100%
 0%,Advisor (play-safe only),424,70%,100%
 0%,Oracle (perfect hindsight),0,100%,100%
-30%,Always cheapest,1299,76%,93%
+30%,Always cheapest,1297,76%,93%
 30%,Always fastest,5714,30%,100%
 30%,Always safest,4055,43%,100%
 30%,Fixed weights,6093,47%,100%
@@ -15,9 +15,9 @@ Noise,Strategy,Avg regret vs oracle ($),Matches oracle,Meets on-time target
 30%,Advisor (expected cost only),452,82%,100%
 30%,Advisor (play-safe only),831,67%,100%
 30%,Oracle (perfect hindsight),0,100%,100%
-60%,Always cheapest,1299,76%,93%
+60%,Always cheapest,1297,76%,93%
 60%,Always fastest,5714,30%,100%
-60%,Always safest,3664,46%,100%
+60%,Always safest,3663,46%,100%
 60%,Fixed weights,6110,52%,100%
 60%,Advisor (profile rules),319,83%,99%
 60%,Advisor (expected cost only),659,79%,99%

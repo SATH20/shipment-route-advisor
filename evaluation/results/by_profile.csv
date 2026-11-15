@@ -1,13 +1,13 @@
 Profile,Strategy,Avg true cost ($),Meets on-time target,Avg worst-10% cost ($)
-express,Always cheapest,3234,75%,12573
+express,Always cheapest,3224,75%,12531
 express,Fixed weights,11254,100%,11875
 express,Advisor (profile rules),7813,100%,12646
-standard,Always cheapest,1159,100%,2826
-standard,Fixed weights,5131,100%,6748
-standard,Advisor (profile rules),1159,100%,2826
-budget,Always cheapest,1223,100%,2087
-budget,Fixed weights,6658,100%,7405
-budget,Advisor (profile rules),1244,100%,1782
-high_value,Always cheapest,2260,100%,17584
-high_value,Fixed weights,3002,100%,19891
-high_value,Advisor (profile rules),2087,100%,6834
+standard,Always cheapest,1160,100%,2827
+standard,Fixed weights,5132,100%,6748
+standard,Advisor (profile rules),1160,100%,2827
+budget,Always cheapest,1224,100%,2089
+budget,Fixed weights,6660,100%,7407
+budget,Advisor (profile rules),1246,100%,1783
+high_value,Always cheapest,2260,100%,17583
+high_value,Fixed weights,3003,100%,19890
+high_value,Advisor (profile rules),2088,100%,6833

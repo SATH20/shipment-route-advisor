@@ -148,8 +148,20 @@ def _shortest(src: str, dst: str, banned: Iterable[str]) -> List[str]:
     return path[::-1]
 
 
+# Ships on Asia/India - Europe services are too big for the Panama Canal, so legs to or from a
+# European port never use it.
+EUROPE_PORTS = {"Rotterdam", "Hamburg", "Felixstowe", "Antwerp", "Piraeus", "Algeciras", "Port Said"}
+
+
+def _sea_banned(frm: str, to: str, region: str) -> set:
+    banned = set(_RULES.get(region, set()))
+    if frm in EUROPE_PORTS or to in EUROPE_PORTS:
+        banned |= {"Panama"}
+    return banned
+
+
 def sea_path(frm: str, to: str, region: str) -> List[LatLon]:
-    banned = _RULES.get(region, set())
+    banned = _sea_banned(frm, to, region)
     if region == "cape":
         banned = banned | {"CAPE"}
         names = _shortest(frm, "CAPEFAR", banned) + _shortest("CAPEFAR", to, banned)[1:]
@@ -214,7 +226,7 @@ def route_passages(legs: Sequence) -> List[str]:
         elif l.mode == "air":
             add_passage("flight")
         elif l.mode == "sea":
-            banned = _RULES.get(l.region, set())
+            banned = _sea_banned(l.from_hub, l.to_hub, l.region)
             if l.region == "cape":
                 banned = banned | {"CAPE"}
                 names = _shortest(l.from_hub, "CAPEFAR", banned) + _shortest("CAPEFAR", l.to_hub, banned)[1:]

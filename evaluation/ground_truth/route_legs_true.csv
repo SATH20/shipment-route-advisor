@@ -38,13 +38,13 @@ S006-R4,1,Singapore,New York,air,air,15752.0,16534.79,2.75,0.056,0.84,0.244,0.08
 S007-R1,1,Shanghai,Singapore,sea,open_ocean,4221.0,455.03,7.49,0.163,0.52,0.223,0.277
 S007-R1,2,Singapore,Rotterdam,air,air,11456.0,21801.7,2.27,0.203,1.67,0.244,0.125
 S007-R2,1,Shanghai,Rotterdam,air,air,9313.0,19093.22,2.03,0.088,1.07,0.28,0.082
-S007-R3,1,Shanghai,Rotterdam,sea,open_ocean,27345.0,1934.94,43.07,0.274,4.65,0.372,0.224
+S007-R3,1,Shanghai,Rotterdam,sea,open_ocean,27527.0,1946.78,43.35,0.274,4.65,0.372,0.224
 S007-R4,1,Shanghai,Singapore,sea,open_ocean,4275.0,437.93,7.58,0.278,5.2,0.612,0.182
 S007-R4,2,Singapore,Rotterdam,sea,open_ocean,23437.0,1979.56,37.06,0.383,3.65,0.784,0.247
 S008-R1,1,Shanghai,Rotterdam,air,air,9126.0,4913.55,2.01,0.06,1.08,0.293,0.092
 S008-R2,1,Shanghai,Port Said,sea,red_sea,13694.0,436.1,22.07,0.278,3.61,0.582,0.496
 S008-R2,2,Port Said,Rotterdam,sea,mediterranean,6589.0,280.87,11.14,0.276,2.8,0.333,0.624
-S008-R3,1,Shanghai,Rotterdam,sea,open_ocean,28274.0,729.38,44.5,0.253,3.53,0.366,0.215
+S008-R3,1,Shanghai,Rotterdam,sea,open_ocean,28461.0,733.22,44.79,0.253,3.53,0.366,0.215
 S008-R4,1,Shanghai,Colombo,sea,open_ocean,6857.0,294.42,11.55,0.172,2.11,0.406,0.288
 S008-R4,2,Colombo,Rotterdam,air,air,9034.0,4870.07,2.0,0.163,2.4,0.476,0.225
 S009-R1,1,Ho Chi Minh,Lianyungang,sea,open_ocean,3661.0,263.93,6.63,0.312,1.52,0.471,0.352
@@ -57,7 +57,7 @@ S010-R1,1,Shanghai,Singapore,sea,open_ocean,4239.0,253.43,7.52,0.219,1.69,0.485,
 S010-R1,2,Singapore,Rotterdam,air,air,11229.0,7404.87,2.25,0.17,2.16,0.364,0.279
 S010-R2,1,Shanghai,Colombo,sea,open_ocean,7057.0,325.26,11.86,0.393,3.11,0.822,0.197
 S010-R2,2,Colombo,Rotterdam,sea,open_ocean,20972.0,637.27,33.26,0.371,2.94,0.668,0.279
-S010-R3,1,Shanghai,Rotterdam,sea,open_ocean,27018.0,737.7,42.57,0.226,2.46,0.314,0.183
+S010-R3,1,Shanghai,Rotterdam,sea,open_ocean,27197.0,741.6,42.84,0.226,2.46,0.314,0.183
 S010-R4,1,Shanghai,Rotterdam,air,air,9328.0,5858.75,2.04,0.044,1.05,0.178,0.165
 S011-R1,1,Mundra,Salalah,sea,open_ocean,2210.0,209.11,4.4,0.154,1.86,0.321,0.133
 S011-R1,2,Salalah,Piraeus,air,air,3967.0,2995.31,1.44,0.182,0.55,0.318,0.213
@@ -100,7 +100,7 @@ S017-R2,1,Shanghai,Port Said,sea,red_sea,13319.0,1284.29,21.49,0.206,4.77,0.452,
 S017-R2,2,Port Said,Rotterdam,sea,mediterranean,6541.0,674.08,11.06,0.255,3.24,0.58,0.653
 S017-R3,1,Shanghai,Singapore,sea,open_ocean,4089.0,479.25,7.29,0.35,6.0,0.721,0.13
 S017-R3,2,Singapore,Rotterdam,sea,open_ocean,24037.0,2106.18,37.98,0.344,4.17,0.709,0.164
-S017-R4,1,Shanghai,Rotterdam,sea,open_ocean,27227.0,2541.87,42.89,0.249,2.7,0.483,0.109
+S017-R4,1,Shanghai,Rotterdam,sea,open_ocean,27408.0,2557.74,43.17,0.249,2.7,0.483,0.109
 S018-R1,1,Busan,Savannah,air,air,12570.0,23161.0,2.4,0.092,1.09,0.188,0.129
 S018-R2,1,Busan,Panama,sea,open_ocean,15766.0,1147.0,25.26,0.207,2.44,0.222,0.256
 S018-R2,2,Panama,Savannah,air,air,2675.0,5081.03,1.3,0.16,0.66,0.299,0.235
@@ -129,7 +129,7 @@ S022-R1,1,Shanghai,Lianyungang,sea,open_ocean,1128.0,180.68,2.73,0.235,3.32,0.53
 S022-R1,2,Lianyungang,Rotterdam,rail,rail_corridor,9020.0,875.67,13.03,0.348,2.62,0.54,0.277
 S022-R2,1,Shanghai,Port Said,sea,red_sea,13907.0,475.84,22.4,0.203,4.37,0.477,0.456
 S022-R2,2,Port Said,Rotterdam,sea,mediterranean,6275.0,296.85,10.65,0.211,2.34,0.319,0.629
-S022-R3,1,Shanghai,Rotterdam,sea,open_ocean,27563.0,866.45,43.41,0.234,2.66,0.435,0.245
+S022-R3,1,Shanghai,Rotterdam,sea,open_ocean,27746.0,871.21,43.69,0.234,2.66,0.435,0.245
 S022-R4,1,Shanghai,Rotterdam,air,air,9707.0,6850.58,2.08,0.058,0.88,0.106,0.2
 S023-R1,1,Mundra,Piraeus,sea,open_ocean,24203.0,932.15,38.23,0.215,3.52,0.379,0.259
 S023-R2,1,Mundra,Port Said,sea,red_sea,5565.0,332.04,9.56,0.265,3.65,0.56,0.622
