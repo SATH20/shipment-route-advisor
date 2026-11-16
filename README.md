@@ -23,7 +23,7 @@ Each recommendation comes with an explanation, a confidence level, and the small
 - **S020** (electronics, Nhava Sheva to Antwerp): switch between expected cost and play-safe. Expected cost picks Direct sea, play-safe picks Air freight.
 - **S025** (express cargo on the Suez corridor): tick "Red Sea crisis". The route moves off Suez because its on-time probability drops below the 90% express target.
 - **Air capacity crunch** on all shipments: average cost rises 33% and no shipment can switch.
-- **Your own shipment:** the form accepts a shipment that is not in the dataset (see "Your own shipment" below).
+- **Your own shipment:** not in the web UI. Send it to the API (POST /api/recommend on the API's /docs page) or use the command line; see "Your own shipment" below.
 - **How it decides** and **Does it work?** show the method and the evaluation.
 
 ## Running it locally
