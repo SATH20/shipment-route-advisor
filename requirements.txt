@@ -1,5 +1,5 @@
-numpy>=1.26
-pandas>=2.1
+numpy==2.4.6       # pinned: api/cache was built with these versions (see api/cache_store.py)
+pandas==3.1.1
 pytest>=8.0
 fastapi==0.115.4
 uvicorn==0.32.0

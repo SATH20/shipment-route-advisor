@@ -11,13 +11,14 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+from api.cache_store import cached_response  # noqa: E402
 from config import assumptions as A  # noqa: E402
 from config.assumptions import assumptions_table  # noqa: E402
 from engine.analysis import analyze  # noqa: E402
@@ -125,7 +126,7 @@ def _shipment_analysis(
         with_conf = False
         with_tips = False
 
-    return _analysis_response(s, mode, carbon, with_conf, with_tips, penalty, min_on_time, **overrides)
+    return _analysis_response(s, mode, carbon, with_conf, with_tips, **overrides)
 
 
 def _geometry(r) -> Tuple[list, list, list]:
@@ -142,10 +143,12 @@ def _geometry(r) -> Tuple[list, list, list]:
 
 
 def _analysis_response(s: Shipment, mode: Optional[str], carbon: Optional[float], with_conf: bool,
-                       with_tips: bool, penalty: Optional[float] = None, min_on_time: Optional[float] = None,
+                       with_tips: bool,
                        **overrides) -> dict:
     """Run the decision pipeline (analyze + explain) and build the API response.
-    Shared by GET /api/shipments/{id} and POST /api/recommend."""
+    Shared by GET /api/shipments/{id} and POST /api/recommend. ``overrides`` go to analyze()."""
+    penalty = overrides.get("penalty_per_day")
+    min_on_time = overrides.get("min_on_time")
     an = analyze(
         s,
         mode=mode,
@@ -309,6 +312,17 @@ def get_shipment(
                     detail=f"Unknown scenario event '{ev}'. Available: {list(SCENARIOS.keys())}",
                 )
         event_tuple = tuple(event_names)
+
+    # Default settings: serve the precomputed response (api/cache, built by scripts/build_cache.py)
+    # when it was built from exactly these inputs. Anything else is computed live.
+    plain = (not event_tuple and penalty is None and carbon is None and min_on_time is None
+             and not deadline_shift)
+    if plain:
+        s = _load_shipments(()).get(id)
+        if s is not None and (mode is None or mode == s.risk_mode):
+            body = cached_response(id)
+            if body is not None:
+                return Response(content=body, media_type="application/json")
 
     return _shipment_analysis(id, mode, event_tuple, penalty, deadline_shift, carbon, min_on_time)
 

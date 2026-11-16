@@ -1,0 +1,41 @@
+{
+  "fingerprint": "8ceb1faa1149f5a1a3ecd13aaea3c2aab7843c7a3ebafa79278966996c099037",
+  "environment": {
+    "python": "3.11",
+    "numpy": "1.26.4",
+    "pandas": "2.2.3"
+  },
+  "shipments": [
+    "S001",
+    "S002",
+    "S003",
+    "S004",
+    "S005",
+    "S006",
+    "S007",
+    "S008",
+    "S009",
+    "S010",
+    "S011",
+    "S012",
+    "S013",
+    "S014",
+    "S015",
+    "S016",
+    "S017",
+    "S018",
+    "S019",
+    "S020",
+    "S021",
+    "S022",
+    "S023",
+    "S024",
+    "S025",
+    "S026",
+    "S027",
+    "S028",
+    "S029",
+    "S030"
+  ],
+  "note": "Default-settings responses of GET /api/shipments/{id}. Rebuild with: python scripts/build_cache.py"
+}

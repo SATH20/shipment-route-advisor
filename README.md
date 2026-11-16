@@ -18,6 +18,8 @@ python -m evaluation.scenarios      # writes evaluation/results/scenarios.csv
 python -m pytest
 ```
 
+`api/cache/` holds the precomputed answer for every shipment with default settings (the full analysis is slow on a free hosting CPU). The API uses it only if it was built from the same data, code and library versions, and computes live otherwise; other modes, world events, slider changes and your own shipments are always computed live. After changing the data or any decision code, rebuild it with `python scripts/build_cache.py`.
+
 Then start the API and the web app in two terminals:
 
 ```bash
@@ -128,6 +130,7 @@ services/                  explanation text and the check on LLM output
 evaluation/                baselines, metrics, evaluation, scenarios
 evaluation/ground_truth/   true parameters, only used for evaluation
 api/                       FastAPI layer over the engine (GET by shipment id, POST /api/recommend for your own shipment)
+api/cache/                 precomputed default responses (scripts/build_cache.py)
 examples/                  a shipment that is not in the dataset, as JSON
 web/                       Next.js frontend: plan a shipment, how it decides, does it work
 tests/                     unit tests
