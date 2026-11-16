@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import NavLinks from "@/components/NavLinks";
+import ServerWakeNotice from "@/components/ServerWakeNotice";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -67,6 +68,8 @@ export default function RootLayout({
             <NavLinks />
           </div>
         </header>
+
+        <ServerWakeNotice />
 
         <main id="main" className="flex-1 max-w-[1200px] w-full mx-auto px-4 sm:px-6 py-8 sm:py-10">
           {children}

@@ -145,3 +145,41 @@ def test_events_endpoint_lists_every_scenario():
     ev = TestClient(app).get("/api/events").json()
     assert [e["id"] for e in ev] == list(SCENARIOS)
     assert all(e["title"] and e["description"] for e in ev)
+
+
+def test_health():
+    assert client.get("/api/health").json() == {"status": "ok"}
+
+
+def test_allowed_origins_from_env():
+    """ALLOWED_ORIGINS (set on Render to the Vercel URL) controls CORS."""
+    import importlib
+    import os
+    import api.main as m
+    old = os.environ.get("ALLOWED_ORIGINS")
+    os.environ["ALLOWED_ORIGINS"] = "https://example-app.vercel.app, http://localhost:3000"
+    try:
+        m2 = importlib.reload(m)
+        c = TestClient(m2.app)
+        ok = c.get("/api/health", headers={"Origin": "https://example-app.vercel.app"})
+        bad = c.get("/api/health", headers={"Origin": "https://evil.example"})
+        assert ok.headers.get("access-control-allow-origin") == "https://example-app.vercel.app"
+        assert "access-control-allow-origin" not in bad.headers
+    finally:
+        if old is None:
+            os.environ.pop("ALLOWED_ORIGINS", None)
+        else:
+            os.environ["ALLOWED_ORIGINS"] = old
+        importlib.reload(m)
+
+
+def test_s020_air_capacity_crunch_confidence():
+    """The "How sure are we?" panel shows this value; it must come from the event-adjusted run."""
+    d = client.get("/api/shipments/S020", params={"events": "Air capacity crunch"}).json()
+    assert d["confidence"]["agreement"] == 0.45
+    assert d["confidence"]["runs"] == 100
+    assert d["confidence"]["label"] == "Low"
+    pick = next(r["name"] for r in d["routes"] if r["id"] == d["recommended_route_id"])
+    assert pick == "Air freight"
+    # and without the event the same shipment is a confident pick
+    assert client.get("/api/shipments/S020").json()["confidence"]["agreement"] == 0.82

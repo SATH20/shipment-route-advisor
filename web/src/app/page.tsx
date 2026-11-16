@@ -24,13 +24,23 @@ function defaultsFrom(base: ShipmentDetail): ScenarioState {
 }
 
 /** Only the inputs the user actually changed are sent, so the API keeps the full double-check. */
+/** A slider counts as "at its default" even with tiny floating-point error from its steps. */
+function sameValue(a: number, b: number): boolean {
+  return Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(b));
+}
+
+/**
+ * Only the inputs the user actually changed are sent. With no changes the API runs the full
+ * double-check (confidence and what would change our mind), so moving a slider back to its
+ * default brings them back without pressing Reset.
+ */
 function changesFrom(state: ScenarioState, base: ShipmentDetail): FetchShipmentOptions {
   const d = defaultsFrom(base);
   const out: FetchShipmentOptions = {};
   if (state.activeEvents.length > 0) out.events = state.activeEvents.join(",");
-  if (state.penalty !== d.penalty) out.penalty = state.penalty;
-  if (state.deadlineShift !== 0) out.deadline_shift = state.deadlineShift;
-  if (state.carbonPrice !== d.carbonPrice) out.carbon = state.carbonPrice;
+  if (!sameValue(state.penalty, d.penalty)) out.penalty = state.penalty;
+  if (!sameValue(state.deadlineShift, 0)) out.deadline_shift = state.deadlineShift;
+  if (!sameValue(state.carbonPrice, d.carbonPrice)) out.carbon = state.carbonPrice;
   return out;
 }
 

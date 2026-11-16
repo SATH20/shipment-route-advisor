@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { API_URL } from "@/lib/api";
+import { API_IS_LOCAL, API_URL } from "@/lib/api";
 
 export function ErrorBox({
   message,
@@ -36,9 +36,10 @@ export function ErrorBox({
       </h2>
       <p className="text-sm md:text-base text-muted max-w-md mx-auto mb-6 leading-relaxed">
         {message || "The route engine is not answering."}
-        {offline && " Start it with this command, then try again:"}
+        {offline && API_IS_LOCAL && " Start it with this command, then try again:"}
+        {offline && !API_IS_LOCAL && " It may be down for a moment. Please try again in a minute."}
       </p>
-      {offline && (
+      {offline && API_IS_LOCAL && (
         <div className="bg-paper p-3 rounded-xl font-mono text-xs text-ink mb-6 border border-line select-all inline-block">
           uvicorn api.main:app --port {apiPort}
         </div>

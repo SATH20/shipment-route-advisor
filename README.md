@@ -1,5 +1,7 @@
 # Shipment route advisor
 
+**Live demo:** https://YOUR-APP.vercel.app (free hosting, the first load can take about a minute)
+
 Take-home assignment for the Aiqon AI Internship: recommend a route for each shipment, balancing cost, delivery time and risk.
 
 For each shipment I remove routes that break a rule, simulate the rest 5,000 times, drop routes that are worse on every measure, and pick the one with the lowest expected total cost in dollars. High-value cargo is scored on its worst 10% of outcomes instead of the average. Each recommendation comes with an explanation, a confidence level, and the smallest change in inputs that would make a different route win.
@@ -32,6 +34,31 @@ npm run dev        # then open http://localhost:3000
 The web app calls the API at `http://localhost:8000`. To use other ports, set `NEXT_PUBLIC_API_URL` for the web app and `ALLOWED_ORIGINS` (comma-separated) for the API, for example `ALLOWED_ORIGINS=http://localhost:3001 uvicorn api.main:app --port 8001` and `NEXT_PUBLIC_API_URL=http://localhost:8001 npm run dev -- -p 3001`.
 
 An LLM can optionally rewrite the explanations (see Design choices).
+
+## Deploying
+
+The API runs on Render and the web app on Vercel, both on free plans. Deploy the API first, because the web app needs its URL.
+
+**API on Render**
+
+1. Push the repository to GitHub.
+2. In Render, choose New > Blueprint and select the repository. Render reads `render.yaml`: a free Python web service that runs `pip install -r requirements.txt && python generate_dataset.py && python -m evaluation.evaluate` and starts `uvicorn api.main:app --host 0.0.0.0 --port $PORT`, with `PYTHON_VERSION=3.11.9` and a health check on `/api/health`.
+3. When asked for `ALLOWED_ORIGINS`, enter your Vercel URL (for example `https://shipment-route-advisor.vercel.app`, no trailing slash; separate several with commas). If you don't know it yet, enter a placeholder and change it after step 6.
+4. Wait for the deploy, then open `https://<your-service>.onrender.com/api/health`. It should show `{"status":"ok"}`.
+
+**Web app on Vercel**
+
+5. In Vercel, choose Add New > Project, import the repository, and set Root Directory to `web`. The framework (Next.js) and build settings are detected.
+6. Under Environment Variables add `NEXT_PUBLIC_API_URL` = your Render URL (for example `https://shipment-route-advisor-api.onrender.com`). See `web/.env.example`. Then deploy.
+7. Back in Render, set `ALLOWED_ORIGINS` to the Vercel URL you got and save; the service restarts.
+
+| Where | Variable | Value |
+|---|---|---|
+| Render | `ALLOWED_ORIGINS` | the Vercel URL, e.g. `https://shipment-route-advisor.vercel.app` |
+| Render | `PYTHON_VERSION` | `3.11.9` (already set by `render.yaml`) |
+| Vercel | `NEXT_PUBLIC_API_URL` | the Render URL, e.g. `https://shipment-route-advisor-api.onrender.com` |
+
+`NEXT_PUBLIC_API_URL` is built into the web app, so redeploy on Vercel after changing it. A free Render service sleeps after about 15 minutes without traffic; the web app then shows "Starting the server, this can take up to a minute" and keeps retrying for up to 90 seconds.
 
 ## Your own shipment
 

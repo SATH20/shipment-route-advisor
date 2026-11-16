@@ -5,6 +5,8 @@ import dataclasses
 import functools
 import os
 import sys
+import threading
+from contextlib import asynccontextmanager
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -26,7 +28,24 @@ from geography import PORTS, route_passages, route_path  # noqa: E402
 from services.explanation_service import explain  # noqa: E402
 from services.shipment_input import ShipmentIn  # noqa: E402
 
-app = FastAPI(title="Shipment Route Advisor API")
+def _warm_caches() -> None:
+    """Fill the slow caches (the 30-shipment list with confidence checks) right after start-up.
+    Runs in a thread so /api/health answers at once. Matters on free hosting, where the server
+    sleeps and the first visitor would otherwise wait for these on top of the wake-up."""
+    try:
+        _all_shipments_summary()
+        _evaluation_data()
+    except Exception:  # a missing results file etc. is reported by the endpoint itself
+        pass
+
+
+@asynccontextmanager
+async def _lifespan(_app):
+    threading.Thread(target=_warm_caches, daemon=True).start()
+    yield
+
+
+app = FastAPI(title="Shipment Route Advisor API", lifespan=_lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -244,6 +263,12 @@ def _settings(carbon: Optional[float] = None) -> dict:
         "default_carbon_price": A.CARBON_PRICE_USD_PER_TONNE,
         "carbon_price": float(carbon) if carbon is not None else A.CARBON_PRICE_USD_PER_TONNE,
     }
+
+
+@app.get("/api/health")
+def health():
+    """Cheap liveness check for the host (and for the web app while the server wakes up)."""
+    return {"status": "ok"}
 
 
 @app.get("/api/settings")

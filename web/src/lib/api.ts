@@ -8,8 +8,7 @@ import {
   WorldEvent,
 } from "./types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
 
 export class ApiError extends Error {
   status?: number;
@@ -22,36 +21,117 @@ export class ApiError extends Error {
 
 export const API_URL = API_BASE_URL;
 
+/** True when the API runs on this machine (then there is no host to wake up). */
+export const API_IS_LOCAL = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(API_BASE_URL);
+
+// Free hosting (Render) puts the API to sleep; the first request wakes it, which can take
+// up to a minute. Requests keep retrying for WAKE_BUDGET_MS before giving up.
+const WAKE_BUDGET_MS = API_IS_LOCAL ? 8_000 : 90_000;
+const SLOW_MS = 4_000; // after this long, check whether the server is up at all
+const HEALTH_TIMEOUT_MS = 3_000;
+const RETRY_DELAY_MS = 3_000;
+const MIN_ATTEMPT_MS = 60_000; // never cut off a slow but running computation sooner
+const RETRY_STATUSES = [502, 503, 504]; // what a proxy answers while the app is still starting
+
+// --- "server is starting" signal for the notice in the layout ---------------------------
+type WakeListener = (waking: boolean) => void;
+const wakeListeners = new Set<WakeListener>();
+let wakingRequests = 0;
+
+function notify() {
+  wakeListeners.forEach((l) => l(wakingRequests > 0));
+}
+
+export function onServerWaking(listener: WakeListener): () => void {
+  wakeListeners.add(listener);
+  listener(wakingRequests > 0);
+  return () => {
+    wakeListeners.delete(listener);
+  };
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function serverIsUp(): Promise<boolean> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), HEALTH_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/health`, { signal: ctrl.signal });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 async function request<T>(endpoint: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  try {
-    const res = await fetch(url, {
-      ...init,
-      headers: {
-        Accept: "application/json",
-        ...init?.headers,
-      },
+  const start = Date.now();
+  let waking = false;
+  let done = false;
+  const markWaking = () => {
+    if (!waking && !done) {
+      waking = true;
+      wakingRequests += 1;
+      notify();
+    }
+  };
+  // A slow answer is normal for a busy server; only show the notice if it is not up at all.
+  const slowCheck = setTimeout(() => {
+    serverIsUp().then((up) => {
+      if (!up) markWaking();
     });
+  }, SLOW_MS);
 
-    if (!res.ok) {
-      let detail = `Error ${res.status}: ${res.statusText}`;
+  try {
+    for (;;) {
+      const remaining = WAKE_BUDGET_MS - (Date.now() - start);
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), Math.max(remaining, MIN_ATTEMPT_MS));
+      let res: Response;
       try {
-        const body = await res.json();
-        if (body.detail) {
-          detail = body.detail;
-        }
+        res = await fetch(url, {
+          ...init,
+          signal: ctrl.signal,
+          headers: { Accept: "application/json", ...init?.headers },
+        });
       } catch {
-        // use default error text
+        // network error or timeout: the server may still be starting
+        clearTimeout(timeout);
+        if (Date.now() - start + RETRY_DELAY_MS < WAKE_BUDGET_MS) {
+          markWaking();
+          await sleep(RETRY_DELAY_MS);
+          continue;
+        }
+        throw new ApiError(`The route engine at ${API_BASE_URL} is not answering.`);
       }
-      throw new ApiError(detail, res.status);
-    }
+      clearTimeout(timeout);
 
-    return (await res.json()) as T;
-  } catch (err: unknown) {
-    if (err instanceof ApiError) {
-      throw err;
+      if (RETRY_STATUSES.includes(res.status) && Date.now() - start + RETRY_DELAY_MS < WAKE_BUDGET_MS) {
+        markWaking();
+        await sleep(RETRY_DELAY_MS);
+        continue;
+      }
+      if (!res.ok) {
+        let detail = `Error ${res.status}: ${res.statusText}`;
+        try {
+          const body = await res.json();
+          if (typeof body.detail === "string") detail = body.detail;
+        } catch {
+          // use default error text
+        }
+        throw new ApiError(detail, res.status);
+      }
+      return (await res.json()) as T;
     }
-    throw new ApiError(`The route engine at ${API_BASE_URL} is not answering.`);
+  } finally {
+    done = true;
+    clearTimeout(slowCheck);
+    if (waking) {
+      wakingRequests -= 1;
+      notify();
+    }
   }
 }
 
