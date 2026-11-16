@@ -1,12 +1,32 @@
 # Shipment route advisor
 
-**Live demo:** https://YOUR-APP.vercel.app (free hosting, the first load can take about a minute)
-
 Take-home assignment for the Aiqon AI Internship: recommend a route for each shipment, balancing cost, delivery time and risk.
 
-For each shipment I remove routes that break a rule, simulate the rest 5,000 times, drop routes that are worse on every measure, and pick the one with the lowest expected total cost in dollars. High-value cargo is scored on its worst 10% of outcomes instead of the average. Each recommendation comes with an explanation, a confidence level, and the smallest change in inputs that would make a different route win.
+**Live demo:** https://shipment-route-advisor.vercel.app
+**Report:** [report.pdf](report.pdf)
 
-## Running it
+> **If the live demo is slow:** that is Render's free tier, not the code. The API sleeps after about 15 minutes without traffic, so the first request can take up to a minute while it wakes up (the page shows a "Starting the server" notice and keeps retrying). Default shipment pages are served from a precomputed cache and are quick once the server is awake. Anything computed live (another mode, a world event, a slider, your own shipment) runs on a slow free CPU and can take several seconds to a minute.
+
+## What it does
+
+Each shipment has a few candidate routes (direct sea, through the Suez Canal, via a hub, sea plus rail, sea plus air, air). For every shipment the advisor:
+
+1. removes routes that break a rule,
+2. simulates the rest 5,000 times,
+3. drops routes that are worse on every measure,
+4. picks the one with the lowest expected total cost in dollars (high-value cargo is scored on its worst 10% of outcomes instead of the average).
+
+Each recommendation comes with an explanation, a confidence level, and the smallest change in inputs that would make a different route win.
+
+## Things to try in the demo
+
+- **S020** (electronics, Nhava Sheva to Antwerp): switch between expected cost and play-safe. Expected cost picks Direct sea, play-safe picks Air freight.
+- **S025** (express cargo on the Suez corridor): tick "Red Sea crisis". The route moves off Suez because its on-time probability drops below the 90% express target.
+- **Air capacity crunch** on all shipments: average cost rises 33% and no shipment can switch.
+- **Your own shipment:** the form accepts a shipment that is not in the dataset (see "Your own shipment" below).
+- **How it decides** and **Does it work?** show the method and the evaluation.
+
+## Running it locally
 
 Needs Python 3.11+ and Node 20+. No API key is needed.
 
@@ -18,8 +38,6 @@ python -m evaluation.scenarios      # writes evaluation/results/scenarios.csv
 python -m pytest
 ```
 
-`api/cache/` holds the precomputed answer for every shipment with default settings (the full analysis is slow on a free hosting CPU). The API uses it only if it was built from the same data, code and library versions, and computes live otherwise; other modes, world events, slider changes and your own shipments are always computed live. After changing the data or any decision code, rebuild it with `python scripts/build_cache.py`.
-
 Then start the API and the web app in two terminals:
 
 ```bash
@@ -29,38 +47,14 @@ uvicorn api.main:app --port 8000
 ```bash
 cd web
 npm install
-npm run build      # optional: production build check (npm run lint and npx tsc --noEmit also work)
 npm run dev        # then open http://localhost:3000
 ```
 
-The web app calls the API at `http://localhost:8000`. To use other ports, set `NEXT_PUBLIC_API_URL` for the web app and `ALLOWED_ORIGINS` (comma-separated) for the API, for example `ALLOWED_ORIGINS=http://localhost:3001 uvicorn api.main:app --port 8001` and `NEXT_PUBLIC_API_URL=http://localhost:8001 npm run dev -- -p 3001`.
+`npm run build`, `npm run lint` and `npx tsc --noEmit` also work. The web app calls the API at `http://localhost:8000`. To use other ports, set `NEXT_PUBLIC_API_URL` for the web app and `ALLOWED_ORIGINS` (comma-separated) for the API, for example `ALLOWED_ORIGINS=http://localhost:3001 uvicorn api.main:app --port 8001` and `NEXT_PUBLIC_API_URL=http://localhost:8001 npm run dev -- -p 3001`.
+
+`api/cache/` holds the precomputed answer for every shipment with default settings, because the full analysis is slow on a free hosting CPU. The API uses it only if it was built from the same data, code and library versions, and computes live otherwise. Other modes, world events, slider changes and your own shipments are always computed live. After changing the data or any decision code, rebuild it with `python scripts/build_cache.py`.
 
 An LLM can optionally rewrite the explanations (see Design choices).
-
-## Deploying
-
-The API runs on Render and the web app on Vercel, both on free plans. Deploy the API first, because the web app needs its URL.
-
-**API on Render**
-
-1. Push the repository to GitHub.
-2. In Render, choose New > Blueprint and select the repository. Render reads `render.yaml`: a free Python web service that runs `pip install -r requirements.txt && python generate_dataset.py && python -m evaluation.evaluate` and starts `uvicorn api.main:app --host 0.0.0.0 --port $PORT`, with `PYTHON_VERSION=3.11.9` and a health check on `/api/health`.
-3. When asked for `ALLOWED_ORIGINS`, enter your Vercel URL (for example `https://shipment-route-advisor.vercel.app`, no trailing slash; separate several with commas). If you don't know it yet, enter a placeholder and change it after step 6.
-4. Wait for the deploy, then open `https://<your-service>.onrender.com/api/health`. It should show `{"status":"ok"}`.
-
-**Web app on Vercel**
-
-5. In Vercel, choose Add New > Project, import the repository, and set Root Directory to `web`. The framework (Next.js) and build settings are detected.
-6. Under Environment Variables add `NEXT_PUBLIC_API_URL` = your Render URL (for example `https://shipment-route-advisor-api.onrender.com`). See `web/.env.example`. Then deploy.
-7. Back in Render, set `ALLOWED_ORIGINS` to the Vercel URL you got and save; the service restarts.
-
-| Where | Variable | Value |
-|---|---|---|
-| Render | `ALLOWED_ORIGINS` | the Vercel URL, e.g. `https://shipment-route-advisor.vercel.app` |
-| Render | `PYTHON_VERSION` | `3.11.9` (already set by `render.yaml`) |
-| Vercel | `NEXT_PUBLIC_API_URL` | the Render URL, e.g. `https://shipment-route-advisor-api.onrender.com` |
-
-`NEXT_PUBLIC_API_URL` is built into the web app, so redeploy on Vercel after changing it. A free Render service sleeps after about 15 minutes without traffic; the web app then shows "Starting the server, this can take up to a minute" and keeps retrying for up to 90 seconds.
 
 ## Your own shipment
 
@@ -74,7 +68,7 @@ curl -X POST "http://localhost:8000/api/recommend" -H "Content-Type: application
 python -m engine.optimizer --file examples/custom_shipment.json
 ```
 
-The API returns the same response as `GET /api/shipments/{id}` (pick, every route's numbers, explanation, confidence and what would change it); add `?mode=play_safe` or `?mode=expected` to override the profile. `delay_penalty_usd_per_day` is optional and defaults to the profile's share of cargo value. Out-of-range values (for example a probability above 1), unknown profiles, modes or regions, and legs that do not connect origin to destination are rejected with a 422 that names the field. Ports the map does not know are fine; their route just comes back without map coordinates.
+The API returns the same response as `GET /api/shipments/{id}` (pick, every route's numbers, explanation, confidence and what would change it). Add `?mode=play_safe` or `?mode=expected` to override the profile. `delay_penalty_usd_per_day` is optional and defaults to the profile's share of cargo value. Out-of-range values (for example a probability above 1), unknown profiles, modes or regions, and legs that do not connect origin to destination are rejected with a 422 that names the field. Ports the map does not know are fine; their route just comes back without map coordinates.
 
 ## How a route is scored
 
@@ -96,7 +90,7 @@ The penalty per late day and the reliability requirement depend on the type of c
 
 ## Steps
 
-1. Hard rules: hazardous cargo can't go by air, the customer can exclude regions (e.g. the Red Sea), freight must fit the budget, and planned transit must fit the deadline.
+1. Hard rules: hazardous cargo can't go by air, the customer can exclude regions (for example the Red Sea), freight must fit the budget, and planned transit must fit the deadline.
 2. Simulation: each leg can be delayed (with a random delay length) or disrupted. 5,000 runs give the distribution of arrival time and total cost.
 3. Reliability rule: the route must meet the profile's on-time probability.
 4. Pareto filter: a route is dropped if another route is at least as good on cost, time, reliability, disruption risk and CO2.
@@ -129,7 +123,7 @@ engine/                    constraints, simulation, pareto, scoring, optimizer, 
 services/                  explanation text and the check on LLM output
 evaluation/                baselines, metrics, evaluation, scenarios
 evaluation/ground_truth/   true parameters, only used for evaluation
-api/                       FastAPI layer over the engine (GET by shipment id, POST /api/recommend for your own shipment)
+api/                       FastAPI layer over the engine (GET by shipment id, POST /api/recommend)
 api/cache/                 precomputed default responses (scripts/build_cache.py)
 examples/                  a shipment that is not in the dataset, as JSON
 web/                       Next.js frontend: plan a shipment, how it decides, does it work
@@ -165,7 +159,7 @@ All strategies make their choices from the noisy estimates and follow the same h
 | Fixed weights (0.4/0.3/0.15/0.15) | $6,093 | 47% | 100% | $11,111 | 161.4 |
 | Advisor, expected cost for every shipment | $452 | 82% | 100% | $6,559 | 60.0 |
 | Advisor, play-safe for every shipment | $831 | 67% | 100% | $6,008 | 88.0 |
-| Advisor (profile settings) | $315 | 91% | 100% | $6,421 | 67.3 |
+| **Advisor (profile settings)** | **$315** | **91%** | **100%** | **$6,421** | **67.3** |
 | Oracle | $0 | 100% | 100% | $6,083 | 67.0 |
 
 With larger or smaller estimation errors, the average regret was:
@@ -179,7 +173,7 @@ With larger or smaller estimation errors, the average regret was:
 
 What I take from this:
 
-- With perfect risk estimates the advisor's regret is $0. With 30% estimation error it makes the oracle's choice 91% of the time, and at 60% error 83% of the time; the average regret barely changes ($315 to $319) because the decisions it gets wrong are close calls.
+- With perfect risk estimates the advisor's regret is $0. With 30% estimation error it makes the oracle's choice 91% of the time, and at 60% error 83% of the time. The average regret barely changes ($315 to $319) because the decisions it gets wrong are close calls.
 - Always picking the cheapest allowed route has the lowest average cost ($1,986 vs $3,200) and the lowest CO2, but it misses the on-time target for 25% of express shipments, and its worst-case cost on high-value cargo is 2.6 times higher ($17,583 vs $6,833).
 - For express cargo the advisor spends more on average ($7,813 vs $3,224 for cheapest) because it pays for reliability. Its worst case there is no better than cheapest's.
 - Treating every shipment the same way does worse. Play-safe for everyone raises the regret to $831, and expected cost for everyone to $452, so the per-profile settings matter.
@@ -211,6 +205,8 @@ What I take from this:
 - In one version of the data the random draw produced no hazardous shipments, so the "no air for batteries" rule was tested but never used. The generator now makes sure there are at least two.
 - The "what would change it" search re-decides with 1,000 simulations to stay fast, but compared the result with the 5,000-simulation pick. On close calls (S009 and S021 in play-safe mode) the cheaper re-decision already disagreed at today's inputs, so it reported nonsense such as "with a deadline 0.0 days later". It now switches to the full simulation count when that happens, and never reports a change of zero. The same search said "None would win" when a shorter deadline left no valid route; it now says no route would pass the rules. Neither change affects any pick or evaluation number.
 - In the scenarios, some route changes first showed up as negative savings. These were switches forced by a broken rule, so I now count them separately.
+- Shanghai to Rotterdam was routed through the Panama Canal. Sea paths to European ports now exclude Panama.
+- The full analysis took about a minute per shipment on Render's free CPU, almost all of it in the confidence check and the tipping-point search. Default results are now precomputed and guarded by a fingerprint of the data, code and library versions. While testing the cache I also found and fixed a crash when `min_on_time` was passed twice to the shipments endpoint.
 
 ## Assumptions
 
