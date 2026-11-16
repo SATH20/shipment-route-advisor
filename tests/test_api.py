@@ -183,3 +183,15 @@ def test_s020_air_capacity_crunch_confidence():
     assert pick == "Air freight"
     # and without the event the same shipment is a confident pick
     assert client.get("/api/shipments/S020").json()["confidence"]["agreement"] == 0.82
+
+
+def test_web_example_shipment_matches_examples_folder():
+    """The web app pre-fills "Your own shipment" with a copy of the example (Vercel only builds web/)."""
+    import json
+    import os
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "examples", "custom_shipment.json"), encoding="utf-8") as f:
+        original = json.load(f)
+    with open(os.path.join(root, "web", "src", "data", "custom_shipment.example.json"), encoding="utf-8") as f:
+        copy = json.load(f)
+    assert copy == original, "copy examples/custom_shipment.json to web/src/data/custom_shipment.example.json"

@@ -10,6 +10,7 @@ import ShipmentHeader from "@/components/ShipmentHeader";
 import RecommendationPanel from "@/components/RecommendationPanel";
 import WhatIfScenarios, { ScenarioState } from "@/components/WhatIfScenarios";
 import TripsHistogram from "@/components/TripsHistogram";
+import CustomShipment from "@/components/CustomShipment";
 import { ErrorBox, SectionsSkeleton } from "@/components/PageSkeletons";
 
 const DEFAULT_SHIPMENT = "S020";
@@ -265,12 +266,18 @@ export default function PlanShipmentPage() {
             hasChanges={Object.keys(changesFrom(scenario, baseDetail)).length > 0}
           />
 
-          <TripsHistogram
-            routes={currentDetail.routes}
-            deadlineDays={currentDetail.shipment.deadline_days}
-            nSims={currentDetail.settings.n_sims}
-          />
         </div>
+      )}
+
+      {/* Independent of the dropdown: stays mounted (and keeps its result) when the shipment changes */}
+      <CustomShipment />
+
+      {ready && (
+        <TripsHistogram
+          routes={currentDetail.routes}
+          deadlineDays={currentDetail.shipment.deadline_days}
+          nSims={currentDetail.settings.n_sims}
+        />
       )}
     </div>
   );

@@ -20,6 +20,9 @@ interface RecommendationPanelProps {
   mode: string;
   onChangeMode: (mode: string) => void;
   hasChanges: boolean;
+  /** Set when a second panel is on the page, so ids stay unique. */
+  idPrefix?: string;
+  stepLabel?: string;
 }
 
 const CONFIDENCE_COLOR: Record<string, string> = {
@@ -78,7 +81,10 @@ export default function RecommendationPanel({
   mode,
   onChangeMode,
   hasChanges,
+  idPrefix = "",
+  stepLabel = "3",
 }: RecommendationPanelProps) {
+  const titleId = `${idPrefix}pick-title`;
   const { routes, confidence, tipping, warnings, shipment, settings } = detail;
   const pick = routes.find((r) => r.id === detail.recommended_route_id) || null;
   const runnerUp = routes.find((r) => r.id === detail.runner_up_id) || null;
@@ -90,7 +96,7 @@ export default function RecommendationPanel({
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1c2a40] pb-6">
       <div className="flex items-center gap-3">
         <span className="w-7 h-7 rounded-full bg-white text-ink font-bold text-xs flex items-center justify-center" aria-hidden="true">
-          3
+          {stepLabel}
         </span>
         <h2 className="text-xl md:text-2xl font-bold m-0 text-white">Our pick, and why</h2>
       </div>
@@ -175,14 +181,14 @@ export default function RecommendationPanel({
     : [];
 
   return (
-    <section className="bg-ink text-white rounded-3xl p-6 md:p-8 shadow-lg" aria-labelledby="pick-title">
+    <section className="bg-ink text-white rounded-3xl p-6 md:p-8 shadow-lg" aria-labelledby={titleId}>
       {header}
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-7">
           <p className="text-sm font-medium text-[#a9b7cc] m-0">We recommend</p>
           <p
-            id="pick-title"
+            id={titleId}
             className="text-4xl md:text-5xl font-heading font-bold tracking-tight mt-1 mb-6"
             style={{ color: getRouteColor(pick.name, true) }}
           >

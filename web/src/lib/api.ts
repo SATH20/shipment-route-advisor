@@ -12,11 +12,32 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 export class ApiError extends Error {
   status?: number;
-  constructor(message: string, status?: number) {
+  /** For a 422: each problem the API found, with the field it is about. */
+  problems: { field: string; message: string }[];
+  constructor(message: string, status?: number, problems: { field: string; message: string }[] = []) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.problems = problems;
   }
+}
+
+/** Turn a FastAPI validation location like ["body","routes",0,"legs",1,"delay_prob"] into words. */
+function fieldName(loc: unknown): string {
+  if (!Array.isArray(loc)) return "";
+  const parts: string[] = [];
+  for (let i = 0; i < loc.length; i++) {
+    const p = loc[i];
+    if (p === "body" || p === "query") continue;
+    const next = loc[i + 1];
+    if ((p === "routes" || p === "legs") && typeof next === "number") {
+      parts.push(`${p === "routes" ? "route" : "leg"} ${next + 1}`);
+      i++;
+    } else {
+      parts.push(String(p));
+    }
+  }
+  return parts.join(", ");
 }
 
 export const API_URL = API_BASE_URL;
@@ -115,13 +136,21 @@ async function request<T>(endpoint: string, init?: RequestInit): Promise<T> {
       }
       if (!res.ok) {
         let detail = `Error ${res.status}: ${res.statusText}`;
+        let problems: { field: string; message: string }[] = [];
         try {
           const body = await res.json();
           if (typeof body.detail === "string") detail = body.detail;
+          if (Array.isArray(body.detail)) {
+            problems = body.detail.map((d: { loc?: unknown; msg?: unknown }) => ({
+              field: fieldName(d.loc),
+              message: String(d.msg ?? "").replace(/^Value error, /, ""),
+            }));
+            detail = problems.map((p) => (p.field ? `${p.field}: ${p.message}` : p.message)).join(" ");
+          }
         } catch {
           // use default error text
         }
-        throw new ApiError(detail, res.status);
+        throw new ApiError(detail, res.status, problems);
       }
       return (await res.json()) as T;
     }
@@ -191,4 +220,14 @@ export async function fetchEvents(): Promise<WorldEvent[]> {
 
 export async function fetchSettings(): Promise<ModelSettings> {
   return request<ModelSettings>("/api/settings");
+}
+
+/** Recommend a route for a shipment that is not in the dataset (POST /api/recommend). */
+export async function recommendShipment(shipment: unknown, mode?: string): Promise<ShipmentDetail> {
+  const qs = mode ? `?mode=${encodeURIComponent(mode)}` : "";
+  return request<ShipmentDetail>(`/api/recommend${qs}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(shipment),
+  });
 }

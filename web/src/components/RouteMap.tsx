@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useId, useMemo } from "react";
 import { geoEquirectangular, geoPath, geoGraticule } from "d3-geo";
 import * as topojson from "topojson-client";
 import landData from "world-atlas/land-110m.json";
@@ -76,6 +76,8 @@ export default function RouteMap({
   origin,
   destination,
 }: RouteMapProps) {
+  // unique per map, so the moving dot follows this map's path when two maps are on the page
+  const pathId = `pick-path-${useId().replace(/:/g, "")}`;
   const width = 960;
   const height = 580;
 
@@ -331,7 +333,7 @@ export default function RouteMap({
             return (
               <path
                 key={r.route.id}
-                id={isRec ? "recommended-map-path" : undefined}
+                id={isRec ? pathId : undefined}
                 className={`draw d${(idx % 4) + 1}`}
                 pathLength="1"
                 d={r.pathString}
@@ -349,7 +351,7 @@ export default function RouteMap({
           {recommendedRoute && (
             <circle className="travel-dot" r="6" fill={recommendedRoute.color} stroke="#ffffff" strokeWidth="2.5">
               <animateMotion dur="4.5s" repeatCount="indefinite" begin="1.2s">
-                <mpath href="#recommended-map-path" />
+                <mpath href={`#${pathId}`} />
               </animateMotion>
             </circle>
           )}
